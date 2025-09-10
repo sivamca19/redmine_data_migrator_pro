@@ -19,8 +19,6 @@ class FileUploadService
     return failure('Unsupported source type') unless valid_source_type?
 
     create_migration_record
-    return failure(@migration.errors.full_messages.join('; ')) unless @migration.persisted?
-
     store_uploaded_file
     analyze_file
     update_migration_with_analysis
@@ -42,7 +40,6 @@ class FileUploadService
     @migration.user = @user
     @migration.filename = @uploaded_file.original_filename
     @migration.file_size = @uploaded_file.size
-    @migration.save
   end
 
   def store_uploaded_file
