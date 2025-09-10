@@ -5,8 +5,7 @@ class ExternalAssetConfigsController < ApplicationController
   before_action :find_config, only: [:show, :edit, :update, :destroy, :test_connection]
 
   def index
-    @configs = ExternalAssetConfig.includes(:project)
-                                  .order(:name)
+    @configs = ExternalAssetConfig.order(:name)
   end
 
   def show
@@ -15,7 +14,6 @@ class ExternalAssetConfigsController < ApplicationController
 
   def new
     @config = ExternalAssetConfig.new
-    @projects = Project.active.has_module(:issue_tracking)
   end
 
   def create
@@ -25,13 +23,11 @@ class ExternalAssetConfigsController < ApplicationController
       flash[:notice] = "External asset configuration '#{@config.name}' was successfully created."
       redirect_to external_asset_configs_path
     else
-      @projects = Project.active.has_module(:issue_tracking)
       render :new
     end
   end
 
   def edit
-    @projects = Project.active.has_module(:issue_tracking)
     # Load existing credentials into virtual attributes for form display
     @config.load_credentials_to_attributes
   end
@@ -41,7 +37,6 @@ class ExternalAssetConfigsController < ApplicationController
       flash[:notice] = "Configuration '#{@config.name}' was successfully updated."
       redirect_to external_asset_configs_path
     else
-      @projects = Project.active.has_module(:issue_tracking)
       # Load credentials for form redisplay
       @config.load_credentials_to_attributes
       render :edit
@@ -97,7 +92,7 @@ class ExternalAssetConfigsController < ApplicationController
 
   def config_params
     params.require(:external_asset_config).permit(
-      :name, :system_type, :project_id, :base_url, :status, :description,
+      :name, :system_type, :base_url, :status, :description,
       :email, :api_token, :api_key, :team_id, :additional_config
     )
   end

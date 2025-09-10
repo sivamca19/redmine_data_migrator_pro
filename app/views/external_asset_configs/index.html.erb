@@ -16,7 +16,6 @@
       <tr>
         <th>Name</th>
         <th>System Type</th>
-        <th>Project</th>
         <th>Base URL</th>
         <th>Status</th>
         <th>Connection</th>
@@ -35,9 +34,6 @@
             <span class="badge <%= config.system_type %>-badge">
               <%= config.system_type_humanized %>
             </span>
-          </td>
-          <td class="project">
-            <%= config.project ? link_to(config.project.name, project_path(config.project)) : 'All Projects' %>
           </td>
           <td class="base-url">
             <%= truncate(config.base_url, length: 40) %>

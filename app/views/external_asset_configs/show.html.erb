@@ -34,17 +34,6 @@
     </div>
 
     <div class="attribute">
-      <div class="label">Associated Project:</div>
-      <div class="value">
-        <% if @config.project %>
-          <%= link_to @config.project.name, project_path(@config.project) %>
-        <% else %>
-          <em>All Projects (Global Configuration)</em>
-        <% end %>
-      </div>
-    </div>
-
-    <div class="attribute">
       <div class="label">Base URL:</div>
       <div class="value">
         <a href="<%= @config.base_url %>" target="_blank" class="external">

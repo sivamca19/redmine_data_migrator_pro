@@ -7,7 +7,6 @@ class ExternalAssetConfig < ActiveRecord::Base
   # Virtual attributes for form handling
   attr_accessor :email, :api_token, :api_key, :team_id, :additional_config
 
-  belongs_to :project, optional: true
   has_many :data_migrations
 
   validates :name, presence: true, uniqueness: true
@@ -17,16 +16,11 @@ class ExternalAssetConfig < ActiveRecord::Base
 
   scope :active, -> { where(status: 'active') }
   scope :by_system_type, ->(type) { where(system_type: type) }
-  scope :by_project, ->(project) { where(project: project) }
 
   # Encrypt sensitive fields
   before_save :encrypt_credentials
   after_find :decrypt_credentials
 
-  def display_name
-    project_name = project ? " (#{project.name})" : ""
-    "#{name}#{project_name}"
-  end
 
   def system_type_humanized
     system_type.humanize
@@ -40,10 +34,9 @@ class ExternalAssetConfig < ActiveRecord::Base
     status == 'inactive'
   end
 
-  # Get configuration for specific system and project
-  def self.for_migration(system_type, project = nil)
+  # Get configuration for specific system
+  def self.for_migration(system_type)
     configurations = active.by_system_type(system_type)
-    configurations = configurations.by_project(project) if project
     configurations.first
   end
 

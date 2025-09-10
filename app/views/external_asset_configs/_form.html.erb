@@ -28,15 +28,6 @@
     </p>
 
     <p>
-      <%= f.label :project_id, 'Associated Project' %>
-      <%= f.select :project_id,
-                   options_from_collection_for_select(@projects, :id, :name, @config.project_id),
-                   { prompt: 'All Projects (Global Configuration)' },
-                   { class: 'project-selector' } %>
-      <em class="info">Leave blank to make this configuration available for all projects</em>
-    </p>
-
-    <p>
       <%= f.label :base_url, 'Base URL *', class: 'required' %>
       <%= f.text_field :base_url, required: true, size: 60,
                        placeholder: 'https://your-instance.atlassian.net' %>
