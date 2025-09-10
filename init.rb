@@ -12,5 +12,10 @@ Redmine::Plugin.register :redmine_data_migrator_pro do
        :caption => 'Data Migrator',
        :html => { :class => 'icon icon-package' }
 
+  menu :admin_menu, :external_asset_configs, { :controller => 'external_asset_configs', :action => 'index' },
+       :caption => 'External Asset Configs',
+       :html => { :class => 'icon icon-settings' }
+
   permission :manage_data_migration, { :data_migrator => [:index, :upload, :process, :history, :download_report] }
+  permission :manage_external_asset_configs, { :external_asset_configs => [:index, :show, :new, :create, :edit, :update, :destroy, :test_connection] }
 end

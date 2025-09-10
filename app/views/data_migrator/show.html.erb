@@ -60,6 +60,17 @@
     <dt>Project:</dt>
     <dd><%= @migration.project ? link_to(@migration.project.name, project_path(@migration.project)) : 'Not assigned' %></dd>
 
+    <dt>External Asset Config:</dt>
+    <dd>
+      <% if @migration.external_asset_config %>
+        <%= link_to @migration.external_asset_config.display_name,
+                    external_asset_config_path(@migration.external_asset_config) %>
+        <small class="description">(<%= @migration.external_asset_config.system_type.humanize %>)</small>
+      <% else %>
+        <span class="inactive">None configured</span>
+      <% end %>
+    </dd>
+
     <dt>Total Rows:</dt>
     <dd><%= @migration.total_rows %></dd>
 

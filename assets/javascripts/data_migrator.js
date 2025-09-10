@@ -2,55 +2,14 @@
 
 $(document).ready(function() {
 
-  // Source type change handler for external config selector
-  $('#data_migration_source_type').on('change', function() {
-    var sourceType = $(this).val();
-    var configSelector = $('.external-config-selector');
-    
-    // Show config selector only for supported external systems
-    var externalSystems = ['jira', 'clickup', 'asana', 'trello', 'monday'];
-    if (sourceType && externalSystems.includes(sourceType)) {
-      configSelector.show();
-      filterConfigsBySystemType(sourceType);
-    } else {
-      configSelector.hide();
-      $('#data_migration_external_asset_config_id').val('');
+  // External asset config change handler
+  $('#data_migration_external_asset_config_id').on('change', function() {
+    var configId = $(this).val();
+    if (configId) {
+      // Config selected - form is ready
+      console.log('Asset configuration selected:', configId);
     }
   });
-
-  // Initialize config selector visibility on page load
-  var initialSourceType = $('#data_migration_source_type').val();
-  if (initialSourceType) {
-    $('#data_migration_source_type').trigger('change');
-  }
-
-  // Filter configurations based on selected system type
-  function filterConfigsBySystemType(systemType) {
-    var configSelect = $('#data_migration_external_asset_config_id');
-    var allOptions = configSelect.find('option');
-    var promptOption = allOptions.first();
-    
-    // Hide all options except the prompt
-    allOptions.hide();
-    promptOption.show();
-    
-    // Show only matching system type configurations
-    allOptions.each(function() {
-      var option = $(this);
-      var optionText = option.text();
-      
-      // Check if option text contains the system type (case insensitive)
-      if (option.val() === '' || optionText.toLowerCase().includes(systemType.toLowerCase())) {
-        option.show();
-      }
-    });
-    
-    // Reset selection if current selection is now hidden
-    var currentValue = configSelect.val();
-    if (currentValue && !configSelect.find('option[value="' + currentValue + '"]:visible').length) {
-      configSelect.val('');
-    }
-  }
 
   // File upload drag and drop
   var fileUploadArea = $('.file-upload-area');
@@ -171,7 +130,7 @@ $(document).ready(function() {
   // Form validation
   $('#migration-form').on('submit', function(e) {
     var fileInput = $('#data_migration_file');
-    var sourceType = $('#data_migration_source_type');
+    var assetConfig = $('#data_migration_external_asset_config_id');
 
     if (!fileInput.val()) {
       alert('Please select a file to upload.');
@@ -179,8 +138,8 @@ $(document).ready(function() {
       return false;
     }
 
-    if (!sourceType.val()) {
-      alert('Please select a source system.');
+    if (!assetConfig.val()) {
+      alert('Please select an asset configuration.');
       e.preventDefault();
       return false;
     }

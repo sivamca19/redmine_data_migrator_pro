@@ -16,7 +16,10 @@ class FileUploadService
 
   def upload_and_analyze
     return failure('Please select a file to upload') unless @uploaded_file.present?
-    return failure('Unsupported source type') unless valid_source_type?
+    return failure('External asset configuration required') unless @migration_params[:external_asset_config_id].present?
+
+    set_source_type_from_config
+    return failure('Invalid external asset configuration') unless valid_source_type?
 
     create_migration_record
     store_uploaded_file
@@ -31,8 +34,17 @@ class FileUploadService
 
   private
 
+  def set_source_type_from_config
+    if @migration_params[:external_asset_config_id].present?
+      config = ExternalAssetConfig.find(@migration_params[:external_asset_config_id])
+      @migration_params[:source_type] = config.system_type
+    end
+  rescue ActiveRecord::RecordNotFound
+    @migration_params[:source_type] = nil
+  end
+
   def valid_source_type?
-    SUPPORTED_SOURCE_TYPES.include?(@migration_params[:source_type])
+    @migration_params[:source_type].present? && SUPPORTED_SOURCE_TYPES.include?(@migration_params[:source_type])
   end
 
   def create_migration_record

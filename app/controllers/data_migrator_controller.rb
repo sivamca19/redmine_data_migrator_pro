@@ -170,7 +170,7 @@ class DataMigratorController < ApplicationController
   end
 
   def history
-    @migrations = DataMigration.includes(:user, :project)
+    @migrations = DataMigration.includes(:user, :project, :external_asset_config)
                               .order(created_at: :desc)
                               .limit(50)
   end
@@ -230,7 +230,7 @@ class DataMigratorController < ApplicationController
   end
 
   def migration_params
-    params.require(:data_migration).permit(:source_type, :description, :file, :external_asset_config_id)
+    params.require(:data_migration).permit(:description, :file, :external_asset_config_id)
   end
 
   def processing_options_params
