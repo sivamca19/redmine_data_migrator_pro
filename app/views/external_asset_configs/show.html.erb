@@ -68,7 +68,6 @@
           <span class="icon icon-ok">Configured</span>
           <%= link_to 'Test Connection',
                       test_connection_external_asset_config_path(@config),
-                      remote: true,
                       class: 'button-small test-connection-btn',
                       data: { config_id: @config.id } %>
         <% else %>

@@ -73,7 +73,6 @@
         <p>
           <%= link_to 'Test Connection',
                       test_connection_external_asset_config_path(@config),
-                      remote: true,
                       class: 'button test-connection-btn',
                       data: { config_id: @config.id } %>
           <span class="test-connection-result"></span>

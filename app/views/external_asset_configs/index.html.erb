@@ -49,7 +49,6 @@
           <td class="connection-test">
             <% if config.credentials_configured? %>
               <%= link_to 'Test', test_connection_external_asset_config_path(config),
-                          remote: true,
                           class: 'test-connection-btn',
                           data: { config_id: config.id },
                           title: 'Test connection to external system' %>
