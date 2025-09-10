@@ -42,6 +42,7 @@ class FileUploadService
     @migration.user = @user
     @migration.filename = @uploaded_file.original_filename
     @migration.file_size = @uploaded_file.size
+    @migration.save
   end
 
   def store_uploaded_file
