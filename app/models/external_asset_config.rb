@@ -60,6 +60,12 @@ class ExternalAssetConfig < ActiveRecord::Base
   end
 
   def credentials_configured?
+    # For persisted records, check if encrypted credentials exist
+    if persisted?
+      return encrypted_credentials.present? && has_required_credentials_in_storage?
+    end
+
+    # For new records, check virtual attributes
     case system_type
     when 'jira'
       email.present? && api_token.present?
@@ -67,6 +73,10 @@ class ExternalAssetConfig < ActiveRecord::Base
       api_key.present?
     when 'asana'
       api_token.present?
+    when 'trello'
+      api_key.present? && api_token.present?
+    when 'monday'
+      api_key.present?
     else
       true
     end
@@ -84,6 +94,31 @@ class ExternalAssetConfig < ActiveRecord::Base
   end
 
   private
+
+  def has_required_credentials_in_storage?
+    return false unless encrypted_credentials.present?
+
+    begin
+      decrypted = decrypt_sensitive_data(encrypted_credentials)
+      case system_type
+      when 'jira'
+        decrypted['email'].present? && decrypted['api_token'].present?
+      when 'clickup'
+        decrypted['api_key'].present?
+      when 'asana'
+        decrypted['api_token'].present?
+      when 'trello'
+        decrypted['api_key'].present? && decrypted['api_token'].present?
+      when 'monday'
+        decrypted['api_key'].present?
+      else
+        true
+      end
+    rescue => e
+      Rails.logger.error "Failed to check stored credentials for asset config #{id}: #{e.message}"
+      false
+    end
+  end
 
   def encrypt_credentials
     return unless changed?

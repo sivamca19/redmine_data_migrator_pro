@@ -35,15 +35,22 @@ class ExternalAssetConfigsController < ApplicationController
   end
 
   def update
-    # Filter out empty credential fields to preserve existing values
-    filtered_params = config_params
+    # Handle credential updates carefully to preserve existing values
+    update_params = config_params.dup
+
     if @config.persisted?
-      ['email', 'api_token', 'api_key', 'team_id'].each do |field|
-        filtered_params.delete(field) if filtered_params[field].blank?
+      # For existing records, preserve current credentials if form fields are blank
+      ['email', 'api_token', 'api_key', 'team_id', 'additional_config'].each do |field|
+        if update_params[field.to_sym].blank?
+          # Keep the current decrypted value
+          update_params.delete(field.to_sym)
+          # Set virtual attribute to current value to maintain state
+          @config.send("#{field}=", @config.send(field))
+        end
       end
     end
 
-    if @config.update(filtered_params)
+    if @config.update(update_params)
       flash[:notice] = "Configuration '#{@config.name}' was successfully updated."
       redirect_to external_asset_configs_path
     else

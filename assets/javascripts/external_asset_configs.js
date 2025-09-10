@@ -1,7 +1,7 @@
 // External Asset Configurations JavaScript
 
 $(document).ready(function() {
-  
+
   // System type selector change handler
   $('.system-type-selector').on('change', function() {
     var selectedSystem = $(this).val();
@@ -13,7 +13,7 @@ $(document).ready(function() {
     e.preventDefault();
     var $advanced = $('.advanced-section');
     var $link = $(this);
-    
+
     if ($advanced.is(':visible')) {
       $advanced.slideUp();
       $link.text('Show Advanced Settings');
@@ -29,14 +29,14 @@ $(document).ready(function() {
     var $btn = $(this);
     var configId = $btn.data('config-id');
     var originalText = $btn.text();
-    
+
     // Disable button and show loading
     $btn.prop('disabled', true).text('Testing...');
-    
+
     // Clear previous results
     $('#connection-test-result').hide();
     $('.test-connection-result').removeClass('success error').text('');
-    
+
     $.ajax({
       url: $btn.attr('href'),
       type: 'GET',
@@ -57,12 +57,12 @@ $(document).ready(function() {
 function showCredentialFields(systemType) {
   // Hide all credential field groups
   $('.credential-fields').hide();
-  
+
   // Show the selected system's fields
   if (systemType) {
     $('.' + systemType + '-fields').show();
   }
-  
+
   // Update required field indicators
   updateRequiredFields(systemType);
 }
@@ -70,8 +70,16 @@ function showCredentialFields(systemType) {
 function updateRequiredFields(systemType) {
   // Remove all required attributes first
   $('.credential-fields input').removeAttr('required');
-  
-  // Add required attributes based on system type
+
+  // Check if this is a new configuration
+  var isNewConfig = $('.box.tabular').data('config-mode') === 'new';
+
+  // Only add required attributes for new configurations
+  if (!isNewConfig) {
+    return; // Don't make fields required when editing existing configurations
+  }
+
+  // Add required attributes based on system type for new configs only
   switch(systemType) {
     case 'jira':
       $('.jira-fields input[name$="[email]"]').attr('required', 'required');
@@ -95,7 +103,7 @@ function updateRequiredFields(systemType) {
 
 function handleTestConnectionResponse(response, $btn, originalText) {
   $btn.prop('disabled', false).text(originalText);
-  
+
   if (response.success) {
     showConnectionResult('success', response.message);
     $('.test-connection-result').addClass('success').text('✓ Connected');
@@ -107,26 +115,26 @@ function handleTestConnectionResponse(response, $btn, originalText) {
 
 function handleTestConnectionError(xhr, $btn, originalText) {
   $btn.prop('disabled', false).text(originalText);
-  
+
   var message = 'Connection test failed';
   if (xhr.responseJSON && xhr.responseJSON.message) {
     message = xhr.responseJSON.message;
   } else if (xhr.statusText) {
     message += ': ' + xhr.statusText;
   }
-  
+
   showConnectionResult('error', message);
   $('.test-connection-result').addClass('error').text('✗ Failed');
 }
 
 function showConnectionResult(type, message) {
   var $result = $('#connection-test-result');
-  
+
   $result.removeClass('notice error warning')
          .addClass(type === 'success' ? 'notice' : 'error')
          .text(message)
          .show();
-  
+
   // Auto-hide after 5 seconds
   setTimeout(function() {
     $result.fadeOut();
@@ -139,7 +147,7 @@ function initializeForm() {
   if (initialSystemType) {
     showCredentialFields(initialSystemType);
   }
-  
+
   // Set up form validation
   setupFormValidation();
 }
@@ -149,7 +157,7 @@ function setupFormValidation() {
   $('input[name$="[base_url]"]').on('blur', function() {
     var $input = $(this);
     var url = $input.val();
-    
+
     if (url && !isValidUrl(url)) {
       $input.addClass('error');
       showValidationMessage($input, 'Please enter a valid URL starting with http:// or https://');
@@ -181,12 +189,12 @@ function hideValidationMessage($input) {
 // Auto-generate configuration name based on system type and URL
 $(document).on('change', '.system-type-selector, input[name$="[base_url]"]', function() {
   var $nameField = $('input[name$="[name]"]');
-  
+
   // Only auto-generate if name field is empty
   if ($nameField.val() === '') {
     var systemType = $('.system-type-selector').val();
     var baseUrl = $('input[name$="[base_url]"]').val();
-    
+
     if (systemType && baseUrl) {
       try {
         var url = new URL(baseUrl);

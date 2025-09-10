@@ -5,7 +5,7 @@
 
 <%= error_messages_for @config %>
 
-<div class="box tabular">
+<div class="box tabular" data-config-mode="<%= @config.persisted? ? 'edit' : 'new' %>">
   <fieldset>
     <legend>Basic Information</legend>
 
