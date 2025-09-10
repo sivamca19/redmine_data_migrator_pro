@@ -40,7 +40,7 @@ class ExternalAssetConfigsController < ApplicationController
 
     if @config.persisted?
       # First, decrypt and load existing credentials into virtual attributes
-      @config.decrypt_credentials if @config.encrypted_credentials.present?
+      @config.load_credentials_to_attributes
 
       # For existing records, preserve current credentials if form fields are blank
       ['email', 'api_token', 'api_key', 'team_id', 'additional_config'].each do |field|

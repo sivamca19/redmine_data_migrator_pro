@@ -93,6 +93,11 @@ class ExternalAssetConfig < ActiveRecord::Base
     }
   end
 
+  # Public method to load credentials into virtual attributes
+  def load_credentials_to_attributes
+    decrypt_credentials if encrypted_credentials.present?
+  end
+
   private
 
   def has_required_credentials_in_storage?
