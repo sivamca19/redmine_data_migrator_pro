@@ -3,7 +3,7 @@ class CreateExternalAssetConfigs < ActiveRecord::Migration[6.1]
     create_table :external_asset_configs do |t|
       t.string :name, null: false
       t.string :system_type, null: false
-      t.references :project, null: true, foreign_key: true
+      t.integer :project_id, null: true
       t.string :base_url, null: false
       t.text :encrypted_credentials
       t.string :status, default: 'active'
