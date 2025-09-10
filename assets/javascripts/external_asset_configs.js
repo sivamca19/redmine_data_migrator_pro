@@ -39,8 +39,6 @@ function handleTestConnection(e) {
   var $btn = $(this);
   var originalText = $btn.text();
 
-  console.log('Test connection clicked', $btn.attr('href'));
-
   // Disable button and show loading
   $btn.prop('disabled', true).text('Testing...');
   clearPreviousResults();
@@ -54,11 +52,9 @@ function handleTestConnection(e) {
       _: new Date().getTime() // Cache buster
     },
     success: function(response) {
-      console.log('Connection test response:', response);
       handleTestConnectionResponse(response, $btn, originalText);
     },
     error: function(xhr, status, error) {
-      console.error('Connection test error:', xhr.status, xhr.responseText);
       handleTestConnectionError(xhr, $btn, originalText);
     }
   });
