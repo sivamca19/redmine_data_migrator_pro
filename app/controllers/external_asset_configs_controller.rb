@@ -1,6 +1,8 @@
 # Admin controller for managing External Asset Configurations
 # Allows admins to configure JIRA, ClickUp, and other PM tool access credentials
 class ExternalAssetConfigsController < ApplicationController
+  layout 'admin'
+
   before_action :require_admin
   before_action :find_config, only: [:show, :edit, :update, :destroy, :test_connection]
 

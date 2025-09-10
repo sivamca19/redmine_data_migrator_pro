@@ -1,3 +1,5 @@
+<%= render_breadcrumbs(@config, 'edit') %>
+
 <h2>Edit Configuration: <%= @config.name %></h2>
 
 <%= form_with model: @config, local: true, html: { class: 'tabular' } do |f| %>

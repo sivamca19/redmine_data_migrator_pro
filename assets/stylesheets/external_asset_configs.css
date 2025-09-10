@@ -1,5 +1,32 @@
 /* External Asset Configurations Styles */
 
+/* Breadcrumb styles */
+.contextual-breadcrumbs {
+  margin-bottom: 15px;
+  padding: 8px 0;
+  border-bottom: 1px solid #ddd;
+  font-size: 12px;
+}
+
+.contextual-breadcrumbs a {
+  color: #337AB7;
+  text-decoration: none;
+}
+
+.contextual-breadcrumbs a:hover {
+  text-decoration: underline;
+}
+
+.contextual-breadcrumbs .separator {
+  color: #999;
+  margin: 0 5px;
+}
+
+.contextual-breadcrumbs .current {
+  color: #666;
+  font-weight: bold;
+}
+
 /* Index page styles */
 .external-asset-configs-index table.list td.system-type,
 .external-asset-configs-index table.list td.status,
@@ -49,6 +76,31 @@
 
 .test-connection-btn:hover {
   background-color: #286090;
+}
+
+/* Test connection animations */
+.test-connection-btn.test-success {
+  background-color: #5CB85C !important;
+  transform: scale(1.05);
+  transition: all 0.3s ease;
+}
+
+.test-connection-btn.test-error {
+  background-color: #D9534F !important;
+  animation: shake 0.5s ease-in-out;
+  transition: all 0.3s ease;
+}
+
+@keyframes shake {
+  0%, 20%, 40%, 60%, 80% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-2px);
+  }
+  15%, 35%, 55%, 75%, 95% {
+    transform: translateX(2px);
+  }
 }
 
 .missing-credentials {

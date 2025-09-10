@@ -2,6 +2,8 @@
   <%= stylesheet_link_tag 'external_asset_configs', plugin: 'redmine_data_migrator_pro' %>
 <% end %>
 
+<%= render_breadcrumbs(@config, 'show') %>
+
 <div class="contextual">
   <%= link_to 'Edit', edit_external_asset_config_path(@config),
               class: 'icon icon-edit' %>

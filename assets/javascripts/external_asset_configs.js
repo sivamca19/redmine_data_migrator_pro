@@ -135,9 +135,24 @@ function handleTestConnectionResponse(response, $btn, originalText) {
   if (response.success) {
     showConnectionResult('success', response.message);
     $('.test-connection-result').addClass('success').text('✓ Connected');
+
+    // Show success animation
+    $btn.addClass('test-success');
+    setTimeout(function() {
+      $btn.removeClass('test-success');
+    }, 2000);
+
+    // Update any credential status indicators
+    updateCredentialStatus(true);
   } else {
     showConnectionResult('error', response.message);
     $('.test-connection-result').addClass('error').text('✗ Failed');
+
+    // Show error animation
+    $btn.addClass('test-error');
+    setTimeout(function() {
+      $btn.removeClass('test-error');
+    }, 2000);
   }
 }
 
@@ -212,6 +227,23 @@ function showValidationMessage($input, message) {
 
 function hideValidationMessage($input) {
   $input.siblings('.validation-error').remove();
+}
+
+function updateCredentialStatus(connected) {
+  // Update credential status in show view
+  var $credentialStatus = $('.attribute .value .icon');
+  if ($credentialStatus.length) {
+    if (connected) {
+      $credentialStatus.removeClass('icon-warning').addClass('icon-ok').text('Configured & Connected');
+    }
+  }
+
+  // Update any status indicators in listing pages
+  $('.missing-credentials').each(function() {
+    if (connected) {
+      $(this).removeClass('missing-credentials').text('Configured');
+    }
+  });
 }
 
 // Auto-generate configuration name based on system type and URL
