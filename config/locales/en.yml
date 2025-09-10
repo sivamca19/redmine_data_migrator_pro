@@ -1,0 +1,109 @@
+# Data Migrator Plugin Localization
+en:
+  # Labels and titles
+  label_data_migrator: "Data Migrator"
+  label_migration_history: "Migration History"
+  label_source_system: "Source System"
+  label_data_file: "Data File"
+  label_target_project: "Target Project"
+  label_default_tracker: "Default Tracker"
+  label_default_status: "Default Status"
+  label_default_priority: "Default Priority"
+  label_chunk_size: "Chunk Size"
+  label_field_mapping: "Field Mapping"
+  label_processing_configuration: "Processing Configuration"
+  label_migration_information: "Migration Information"
+  label_detected_fields: "Detected Fields"
+  label_processing_status: "Processing Status"
+  label_migration_completed: "Migration Completed"
+  label_migration_failed: "Migration Failed"
+  label_processing_log: "Processing Log"
+  label_error_summary: "Error Summary"
+  label_error_details: "Error Details"
+  label_statistics: "Statistics"
+
+  # Buttons and actions
+  button_upload_and_analyze: "Upload and Analyze"
+  button_start_processing: "Start Processing"
+  button_download_error_report: "Download Error Report"
+  button_show_details: "Show Details"
+  button_hide_details: "Hide Details"
+  button_copy_error: "Copy Error"
+
+  # Messages
+  notice_file_uploaded_successfully: "File uploaded and analyzed successfully."
+  notice_migration_started: "Migration queued successfully. It will be processed by the next cron run."
+  notice_migration_deleted: "Migration deleted successfully."
+  notice_history_cleared: "Migration history cleared successfully."
+
+  # Errors
+  error_migration_not_found: "Migration not found."
+  error_no_report_available: "No error report available for this migration."
+  error_cannot_process_migration: "Cannot process this migration. Please check its status."
+
+  # Status messages
+  status_uploaded: "Ready for configuration"
+  status_processing: "Processing in background"
+  status_completed: "Completed successfully"
+  status_failed: "Processing failed"
+  status_cancelled: "Cancelled"
+
+  # Field types
+  field_type_string: "Text"
+  field_type_text: "Long Text"
+  field_type_int: "Integer"
+  field_type_float: "Float"
+  field_type_date: "Date"
+  field_type_bool: "Boolean"
+  field_type_link: "Link"
+  field_type_list: "List"
+  field_type_enumeration: "Enumeration"
+
+  # Source systems
+  source_jira: "Jira"
+  source_clickup: "ClickUp"
+  source_asana: "Asana"
+  source_trello: "Trello"
+  source_monday: "Monday.com"
+  source_custom: "Custom/Other"
+
+  # Help texts
+  help_supported_formats: "Supported formats: CSV, XLS, XLSX (max 50MB)"
+  help_chunk_size: "Number of rows to process per batch (10-1000, default: 100)"
+  help_field_mapping: "Leave blank to use auto-detection. Custom fields will be created automatically for unmapped columns."
+  help_drop_file: "Drop your file here or click to browse"
+  help_auto_refresh: "This migration is currently being processed by the cron job. The page will auto-refresh to show progress."
+
+  # Statistics
+  stat_total_migrations: "Total Migrations"
+  stat_completed: "Completed"
+  stat_failed: "Failed"
+  stat_currently_processing: "Currently Processing"
+  stat_total_rows_processed: "Total Rows Processed"
+  stat_overall_success_rate: "Overall Success Rate"
+
+  # Validation messages
+  validation_select_file: "Please select a file to upload."
+  validation_select_source: "Please select a source system."
+  validation_file_too_large: "File size must be less than 50MB."
+  validation_invalid_extension: "Please upload a CSV, XLS, or XLSX file."
+  validation_select_project: "Please select a project."
+  validation_confirm_processing: "Are you sure you want to start processing this migration? This action cannot be undone."
+
+  # Field indicators
+  indicator_standard: "Standard"
+  indicator_custom: "Custom"
+
+  # Progress messages
+  progress_rows_imported: "%{success} rows imported, %{errors} errors."
+  progress_success_rate: "Success rate: %{rate}%"
+  progress_processing: "Processing: %{processed}/%{total} rows"
+
+  # Misc
+  text_no_migrations: "No migrations found. Upload your first data file above."
+  text_no_migrations_history: "No migrations found."
+  text_start_first_migration: "Start your first migration"
+  text_sample: "Sample"
+  text_auto_detect: "Auto-detect"
+  text_not_assigned: "Not assigned"
+  text_copied: "Copied!"

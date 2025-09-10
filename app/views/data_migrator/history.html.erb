@@ -1,0 +1,185 @@
+<% content_for :header_tags do %>
+  <%= stylesheet_link_tag 'data_migrator', :plugin => 'redmine_data_migrator_pro' %>
+  <%= javascript_include_tag 'data_migrator', :plugin => 'redmine_data_migrator_pro' %>
+<% end %>
+
+<% html_title "Migration History" %>
+
+<div class="contextual">
+  <%= link_to "New Migration", data_migrator_index_path, :class => 'icon icon-add' %>
+</div>
+
+<h2>Migration History</h2>
+
+<% if @migrations.any? %>
+  <table class="list">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>File</th>
+        <th>Source</th>
+        <th>Project</th>
+        <th>Status</th>
+        <th>Rows</th>
+        <th>Success Rate</th>
+        <th>Duration</th>
+        <th>Created</th>
+        <th>User</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @migrations.each do |migration| %>
+        <tr class="<%= cycle('odd', 'even') %>">
+          <td class="id">
+            <%= link_to "##{migration.id}", data_migrator_path(migration) %>
+          </td>
+          <td class="filename">
+            <span title="<%= migration.filename %>">
+              <%= truncate(migration.filename, length: 30) %>
+            </span>
+            <% if migration.file_size.present? %>
+              <br><small><%= number_to_human_size(migration.file_size) %></small>
+            <% end %>
+          </td>
+          <td class="source">
+            <span class="label label-<%= migration.source_type %>">
+              <%= migration.source_type.humanize %>
+            </span>
+          </td>
+          <td class="project">
+            <%= migration.project ? link_to(migration.project.name, project_path(migration.project)) : '-' %>
+          </td>
+          <td class="status">
+            <span class="status-<%= migration.status %>">
+              <% case migration.status %>
+              <% when 'uploaded' %>
+                <span class="icon icon-file" title="Ready for configuration"></span>
+              <% when 'processing' %>
+                <span class="icon icon-loading" title="Processing in background"></span>
+              <% when 'completed' %>
+                <span class="icon icon-checked" title="Completed successfully"></span>
+              <% when 'failed' %>
+                <span class="icon icon-exclamation" title="Processing failed"></span>
+              <% when 'cancelled' %>
+                <span class="icon icon-cancel" title="Cancelled"></span>
+              <% end %>
+              <%= migration.status.humanize %>
+            </span>
+          </td>
+          <td class="rows">
+            <% if migration.total_rows > 0 %>
+              <%= migration.total_rows %>
+              <% if migration.processed_rows > 0 %>
+                <br><small>(<%= migration.success_rows %>✓ / <%= migration.error_rows %>✗)</small>
+              <% end %>
+            <% else %>
+              -
+            <% end %>
+          </td>
+          <td class="success-rate">
+            <% if migration.completed? && migration.total_rows > 0 %>
+              <span class="success-rate <%= migration.success_rate < 90 ? 'low' : '' %>">
+                <%= migration.success_rate %>%
+              </span>
+            <% elsif migration.processing? && migration.processed_rows > 0 %>
+              <% current_rate = ((migration.success_rows.to_f / migration.processed_rows) * 100).round(1) %>
+              <span class="success-rate partial">
+                <%= current_rate %>%*
+              </span>
+            <% else %>
+              -
+            <% end %>
+          </td>
+          <td class="duration">
+            <% if migration.processing_duration %>
+              <%= pluralize(migration.processing_duration.to_i, 'minute') %>
+            <% elsif migration.processing? %>
+              <%= time_ago_in_words(migration.updated_at) %>
+            <% else %>
+              -
+            <% end %>
+          </td>
+          <td class="created_on">
+            <%= time_tag(migration.created_at) %>
+          </td>
+          <td class="author">
+            <%= avatar(migration.user, :size => "14") %>
+            <%= link_to_user(migration.user) %>
+          </td>
+          <td class="buttons">
+            <%= link_to "", data_migrator_path(migration),
+                :title => "View details",
+                :class => "icon icon-zoom-in" %>
+            <% if (migration.completed? || migration.failed?) && migration.error_report.present? %>
+              <%= link_to "", download_report_data_migrator_path(migration),
+                  :title => "Download error report",
+                  :class => "icon icon-save" %>
+            <% end %>
+            <% if migration.can_restart? %>
+              <%= link_to "", restart_data_migrator_path(migration),
+                  :method => :post,
+                  :data => { :confirm => "Are you sure you want to restart this migration?" },
+                  :title => "Restart migration",
+                  :class => "icon icon-reload" %>
+            <% end %>
+            <%= link_to "", data_migrator_path(migration),
+                :method => :delete,
+                :data => { :confirm => "Are you sure?" },
+                :title => "Delete",
+                :class => "icon icon-del" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% if respond_to?(:paginate) %>
+    <%= paginate @migrations %>
+  <% else %>
+    <p class="pagination">
+      <%= link_to_if @migrations.respond_to?(:prev_page) && @migrations.prev_page,
+          "« Previous", params.merge(page: @migrations.prev_page) %>
+      <%= link_to_if @migrations.respond_to?(:next_page) && @migrations.next_page,
+          "Next »", params.merge(page: @migrations.next_page) %>
+    </p>
+  <% end %>
+
+<% else %>
+  <p class="nodata">No migrations found. <%= link_to "Start your first migration", data_migrator_index_path %>.</p>
+<% end %>
+
+<!-- Summary Statistics -->
+<div class="box">
+  <h3>Statistics</h3>
+  <%
+    total_migrations = @migrations.respond_to?(:total_count) ? @migrations.total_count : DataMigration.count
+    completed_count = DataMigration.completed.count
+    failed_count = DataMigration.failed.count
+    processing_count = DataMigration.processing.count
+  %>
+
+  <dl>
+    <dt>Total Migrations:</dt>
+    <dd><%= total_migrations %></dd>
+
+    <dt>Completed:</dt>
+    <dd><%= completed_count %> (<%= ((completed_count.to_f / total_migrations) * 100).round(1) if total_migrations > 0 %>%)</dd>
+
+    <dt>Failed:</dt>
+    <dd><%= failed_count %> (<%= ((failed_count.to_f / total_migrations) * 100).round(1) if total_migrations > 0 %>%)</dd>
+
+    <dt>Currently Processing:</dt>
+    <dd><%= processing_count %></dd>
+
+    <% if completed_count > 0 %>
+      <% total_rows = DataMigration.completed.sum(:total_rows) %>
+      <% success_rows = DataMigration.completed.sum(:success_rows) %>
+      <dt>Total Rows Processed:</dt>
+      <dd><%= total_rows %></dd>
+
+      <dt>Overall Success Rate:</dt>
+      <dd><%= ((success_rows.to_f / total_rows) * 100).round(1) if total_rows > 0 %>%</dd>
+    <% end %>
+  </dl>
+</div>

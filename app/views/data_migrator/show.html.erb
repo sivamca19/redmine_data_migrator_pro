@@ -1,0 +1,266 @@
+<% content_for :header_tags do %>
+  <%= stylesheet_link_tag 'data_migrator', :plugin => 'redmine_data_migrator_pro' %>
+  <%= javascript_include_tag 'data_migrator', :plugin => 'redmine_data_migrator_pro' %>
+<% end %>
+
+<% html_title "Migration ##{@migration.id}" %>
+
+<div class="contextual">
+  <%= link_to "Back to List", data_migrator_index_path, :class => 'icon icon-list' %>
+  <% if @migration.can_edit_mapping? %>
+    <%= link_to "Edit Field Mapping", edit_mapping_data_migrator_path(@migration), :class => 'icon icon-edit' %>
+  <% end %>
+  <% if @migration.can_rollback? %>
+    <%= link_to "Rollback Migration", rollback_data_migrator_path(@migration),
+        :method => :post,
+        :data => { :confirm => "Are you sure you want to rollback this migration? This will DELETE all imported issues and reset the migration to uploaded state." },
+        :class => 'icon icon-cancel' %>
+  <% end %>
+  <% if (@migration.completed? || @migration.failed?) && @migration.error_report.present? %>
+    <%= link_to "Download Error Report", download_report_data_migrator_path(@migration), :class => 'icon icon-save' %>
+  <% end %>
+  <% if @migration.can_restart? %>
+    <%= link_to "Restart Migration", restart_data_migrator_path(@migration),
+        :method => :post,
+        :data => { :confirm => "Are you sure you want to restart this migration? This will reset all progress and reprocess the file." },
+        :class => 'icon icon-reload' %>
+  <% end %>
+  <%= link_to "Delete", data_migrator_path(@migration), :method => :delete,
+      :data => { :confirm => "Are you sure?" }, :class => 'icon icon-del' %>
+</div>
+
+<h2>Migration #<%= @migration.id %></h2>
+
+<div class="migration-details">
+  <h4>Migration Information</h4>
+  <dl>
+    <dt>File:</dt>
+    <dd><%= @migration.filename %> (<%= number_to_human_size(@migration.file_size) if @migration.file_size %>)</dd>
+
+    <dt>Source System:</dt>
+    <dd><span class="label label-<%= @migration.source_type %>"><%= @migration.source_type.humanize %></span></dd>
+
+    <dt>Status:</dt>
+    <dd>
+      <span class="status-<%= @migration.status %>">
+        <% case @migration.status %>
+        <% when 'uploaded' %>
+          <span class="icon icon-file"></span> Ready for configuration
+        <% when 'processing' %>
+          <span class="icon icon-loading"></span> Processing in background
+        <% when 'completed' %>
+          <span class="icon icon-checked"></span> Completed successfully
+        <% when 'failed' %>
+          <span class="icon icon-exclamation"></span> Processing failed
+        <% end %>
+      </span>
+    </dd>
+
+    <dt>Project:</dt>
+    <dd><%= @migration.project ? link_to(@migration.project.name, project_path(@migration.project)) : 'Not assigned' %></dd>
+
+    <dt>Total Rows:</dt>
+    <dd><%= @migration.total_rows %></dd>
+
+    <% if @migration.processed_rows > 0 %>
+      <dt>Progress:</dt>
+      <dd>
+        <%= @migration.processed_rows %> / <%= @migration.total_rows %> rows processed
+        (<%= @migration.success_rows %> successful, <%= @migration.error_rows %> errors)
+      </dd>
+    <% end %>
+
+    <dt>Created:</dt>
+    <dd><%= time_tag(@migration.created_at) %> by <%= link_to_user(@migration.user) %></dd>
+
+    <% if @migration.processed_at %>
+      <dt>Processed:</dt>
+      <dd><%= time_tag(@migration.processed_at) %></dd>
+    <% end %>
+
+    <% if @migration.description.present? %>
+      <dt>Description:</dt>
+      <dd><%= simple_format(@migration.description) %></dd>
+    <% end %>
+  </dl>
+</div>
+
+<% if @migration.uploaded? %>
+  <!-- Configuration Form for Uploaded Files -->
+  <h3>Configure Field Mapping</h3>
+
+  <% if @analysis %>
+    <div class="field-mapping">
+      <div class="field-mapping-header">
+        Detected Fields (<%= (@analysis[:headers] || []).count %> columns)
+      </div>
+      <div class="field-mapping-content">
+        <% (@analysis[:headers] || []).each_with_index do |header, index| %>
+          <div class="field-row">
+            <div class="field-header">
+              <%= header %>
+              <% if @analysis[:standard_fields] && @analysis[:standard_fields][header] %>
+                <span class="standard-field-indicator">Standard</span>
+              <% else %>
+                <span class="custom-field-indicator">Custom</span>
+              <% end %>
+            </div>
+            <div class="field-sample">
+              <% if @analysis[:sample_data] && @analysis[:sample_data].any? %>
+                <% sample_values = @analysis[:sample_data].map { |row| row[header] }.compact.first(2) %>
+                <% if sample_values.any? %>
+                  Sample: <%= truncate(sample_values.join(', '), length: 50) %>
+                <% end %>
+              <% end %>
+            </div>
+            <div class="field-type">
+              <%= (@analysis[:field_suggestions] && @analysis[:field_suggestions][header]) || 'string' %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="box tabular">
+      <h4>Processing Configuration</h4>
+      <% if @migration.field_mapping.present? %>
+        <p><strong>Field mapping configured.</strong> Ready to start processing.</p>
+        <p>
+          <%= link_to "Edit Field Mapping", edit_mapping_data_migrator_path(@migration), class: "btn btn-small" %>
+          <%= form_with url: update_mapping_data_migrator_path(@migration), method: :patch, local: true, style: "display: inline;" do |f| %>
+            <%= hidden_field_tag :project_id, @migration.project_id %>
+            <%= hidden_field_tag :start_processing, "1" %>
+            <%= submit_tag "Start Processing", class: "btn btn-primary",
+                data: { confirm: "Are you sure you want to start processing? This will begin importing your data." } %>
+          <% end %>
+        </p>
+      <% else %>
+        <p><strong>Next Step:</strong> Configure how your file columns map to Redmine fields.</p>
+        <p>
+          <%= link_to "Configure Field Mapping", edit_mapping_data_migrator_path(@migration), class: "btn btn-primary" %>
+        </p>
+        <p class="help-text">
+          <em>The field mapping editor will auto-detect standard fields from your <%= @migration.source_type.humanize %> export
+          and allow you to customize mappings or create custom fields as needed.</em>
+        </p>
+      <% end %>
+    </div>
+  <% end %>
+
+<% elsif @migration.processing? %>
+  <!-- Processing Status -->
+  <h3>Processing Status</h3>
+  <p>This migration is currently being processed by the cron job. The page will auto-refresh to show progress.</p>
+
+  <% if @migration.total_rows > 0 && @migration.processed_rows > 0 %>
+    <% progress = (@migration.processed_rows.to_f / @migration.total_rows * 100).round(1) %>
+    <div class="progress-bar" style="width: 300px; height: 24px;">
+      <div class="progress-fill" style="width: <%= progress %>%"></div>
+      <span class="progress-text" style="line-height: 24px;"><%= progress %>% (<%= @migration.processed_rows %>/<%= @migration.total_rows %>)</span>
+    </div>
+  <% end %>
+
+<% elsif @migration.completed? %>
+  <!-- Completion Status -->
+  <h3>Migration Completed</h3>
+  <p>
+    <span class="icon icon-checked"></span>
+    Migration completed successfully!
+    <strong><%= @migration.success_rows %></strong> rows imported,
+    <strong><%= @migration.error_rows %></strong> errors.
+    Success rate: <strong><%= @migration.success_rate %>%</strong>
+  </p>
+
+  <% if @migration.error_rows > 0 %>
+    <div class="error-summary">
+      <h4>Error Summary</h4>
+      <pre><%= @migration.error_summary %></pre>
+      <% if @migration.error_report.present? %>
+        <p>
+          <%= link_to "Download detailed error report (CSV)", download_report_data_migrator_path(@migration),
+              class: "btn btn-small" %>
+        </p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if @migration.can_rollback? %>
+    <div class="box">
+      <h4>Rollback Options</h4>
+      <p>If the imported data has issues, you can rollback this migration to:</p>
+      <ul>
+        <li>Delete all <%= @migration.success_rows %> imported issues</li>
+        <li>Reset migration to "uploaded" state</li>
+        <li>Edit field mappings</li>
+        <li>Reprocess with correct mappings</li>
+      </ul>
+      <p>
+        <%= link_to "Rollback & Edit Mapping", rollback_data_migrator_path(@migration),
+            :method => :post,
+            :data => { :confirm => "Are you sure? This will DELETE all #{@migration.success_rows} imported issues." },
+            :class => 'btn btn-danger' %>
+      </p>
+    </div>
+  <% end %>
+
+<% elsif @migration.failed? %>
+  <!-- Failed Status -->
+  <h3>Migration Failed</h3>
+  <p>
+    <span class="icon icon-exclamation"></span>
+    Migration processing failed!
+    <strong><%= @migration.processed_rows %></strong> rows processed,
+    <strong><%= @migration.success_rows %></strong> successful,
+    <strong><%= @migration.error_rows %></strong> errors.
+    <% if @migration.success_rows > 0 %>
+      Success rate: <strong><%= @migration.success_rate %>%</strong>
+    <% end %>
+  </p>
+
+  <div class="error-summary">
+    <h4>Error Summary</h4>
+    <pre><%= @migration.error_summary %></pre>
+    <% if @migration.error_report.present? %>
+      <p>
+        <%= link_to "Download detailed error report (CSV)", download_report_data_migrator_path(@migration),
+            class: "btn btn-small" %>
+      </p>
+    <% end %>
+  </div>
+
+  <% if @migration.can_restart? %>
+    <p>
+      <%= link_to "Restart Migration", restart_data_migrator_path(@migration),
+          :method => :post,
+          :data => { :confirm => "Are you sure you want to restart this migration? This will reset all progress and reprocess the file." },
+          :class => 'btn btn-primary' %>
+    </p>
+  <% end %>
+<% end %>
+
+<% if @migration.processing_log.present? %>
+  <h3>Processing Log</h3>
+  <div class="processing-log">
+<%= @migration.processing_log %>
+  </div>
+<% end %>
+
+<style>
+.help-text {
+  color: #6c757d;
+  font-style: italic;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.btn-primary {
+  background-color: #169bd7;
+  border-color: #169bd7;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #1487c1;
+  border-color: #1487c1;
+}
+</style>

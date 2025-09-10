@@ -1,0 +1,170 @@
+<% content_for :header_tags do %>
+  <%= stylesheet_link_tag 'data_migrator', :plugin => 'redmine_data_migrator_pro' %>
+  <%= javascript_include_tag 'data_migrator', :plugin => 'redmine_data_migrator_pro' %>
+<% end %>
+
+<% html_title "Data Migrator" %>
+
+<div class="contextual">
+  <%= link_to "History", history_data_migrator_index_path, :class => 'icon icon-history' %>
+</div>
+
+<h2>Data Migrator</h2>
+
+<p class="nodata">Import data from various project management tools (Jira, ClickUp, Asana, Trello, etc.) into Redmine.</p>
+
+<div class="box tabular">
+  <%= form_with model: @migration, url: upload_data_migrator_index_path, local: true, multipart: true, html: { id: 'migration-form' } do |f| %>
+    <p>
+      <%= f.label :source_type, "Source System" %>
+      <%= f.select :source_type,
+          options_for_select([
+            ['Jira', 'jira'],
+            ['ClickUp', 'clickup'],
+            ['Asana', 'asana'],
+            ['Trello', 'trello'],
+            ['Monday.com', 'monday'],
+            ['Custom/Other', 'custom']
+          ], @migration.source_type),
+          { prompt: 'Select source system' },
+          { required: true, id: 'data_migration_source_type' } %>
+    </p>
+
+    <p>
+      <%= f.label :file, "Data File" %>
+      <div class="file-upload-area">
+        <%= f.file_field :file, accept: ".csv,.xls,.xlsx", required: true, id: 'data_migration_file' %>
+        <div class="file-info">
+          <p>Drop your file here or click to browse</p>
+          <em>Supported formats: CSV, XLS, XLSX (max 50MB)</em>
+        </div>
+      </div>
+    </p>
+
+    <p>
+      <%= f.label :description, "Description" %>
+      <%= f.text_area :description, rows: 3, placeholder: "Optional description for this migration" %>
+    </p>
+
+    <p>
+      <%= f.submit "Upload and Analyze", class: "btn btn-primary" %>
+    </p>
+  <% end %>
+</div>
+
+<% if @migrations.any? %>
+  <h3>Recent Migrations</h3>
+
+  <table class="list">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>File</th>
+        <th>Source</th>
+        <th>Project</th>
+        <th>Status</th>
+        <th>Rows</th>
+        <th>Progress</th>
+        <th>Created</th>
+        <th>User</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @migrations.each do |migration| %>
+        <tr class="<%= cycle('odd', 'even') %>">
+          <td class="id">
+            <%= link_to "##{migration.id}", data_migrator_path(migration) %>
+          </td>
+          <td class="filename">
+            <span title="<%= migration.filename %>">
+              <%= truncate(migration.filename, length: 25) %>
+            </span>
+            <% if migration.file_size.present? %>
+              <br><small><%= number_to_human_size(migration.file_size) %></small>
+            <% end %>
+          </td>
+          <td class="source">
+            <span class="label label-<%= migration.source_type %>">
+              <%= migration.source_type.humanize %>
+            </span>
+          </td>
+          <td class="project">
+            <%= migration.project ? link_to(migration.project.name, project_path(migration.project)) : '-' %>
+          </td>
+          <td class="status">
+            <span class="status-<%= migration.status %>">
+              <% case migration.status %>
+              <% when 'uploaded' %>
+                <span class="icon icon-file" title="Ready for configuration"></span>
+              <% when 'processing' %>
+                <span class="icon icon-loading" title="Processing in background"></span>
+              <% when 'completed' %>
+                <span class="icon icon-checked" title="Completed successfully"></span>
+              <% when 'failed' %>
+                <span class="icon icon-exclamation" title="Processing failed"></span>
+              <% end %>
+              <%= migration.status.humanize %>
+            </span>
+          </td>
+          <td class="rows">
+            <% if migration.total_rows > 0 %>
+              <%= migration.total_rows %>
+              <% if migration.processed_rows > 0 %>
+                <br><small>(<%= migration.success_rows %>✓ / <%= migration.error_rows %>✗)</small>
+              <% end %>
+            <% else %>
+              -
+            <% end %>
+          </td>
+          <td class="progress">
+            <% if migration.processing? && migration.total_rows > 0 %>
+              <% progress = (migration.processed_rows.to_f / migration.total_rows * 100).round(1) %>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: <%= progress %>%"></div>
+                <span class="progress-text"><%= progress %>%</span>
+              </div>
+            <% elsif migration.completed? %>
+              <span class="success-rate">
+                <%= migration.success_rate %>% success
+              </span>
+            <% else %>
+              -
+            <% end %>
+          </td>
+          <td class="created_on">
+            <%= time_tag(migration.created_at) %>
+          </td>
+          <td class="author">
+            <%= avatar(migration.user, :size => "14") %>
+            <%= link_to_user(migration.user) %>
+          </td>
+          <td class="buttons">
+            <%= link_to "", data_migrator_path(migration),
+                :title => "View details",
+                :class => "icon icon-zoom-in" %>
+            <% if (migration.completed? || migration.failed?) && migration.error_report.present? %>
+              <%= link_to "", download_report_data_migrator_path(migration),
+                  :title => "Download error report",
+                  :class => "icon icon-save" %>
+            <% end %>
+            <% if migration.can_restart? %>
+              <%= link_to "", restart_data_migrator_path(migration),
+                  :method => :post,
+                  :data => { :confirm => "Are you sure you want to restart this migration?" },
+                  :title => "Restart migration",
+                  :class => "icon icon-reload" %>
+            <% end %>
+            <%= link_to "", data_migrator_path(migration),
+                :method => :delete,
+                :data => { :confirm => "Are you sure?" },
+                :title => "Delete",
+                :class => "icon icon-del" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="nodata">No migrations found. Upload your first data file above.</p>
+<% end %>

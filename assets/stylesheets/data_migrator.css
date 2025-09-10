@@ -1,0 +1,265 @@
+/* Data Migrator Plugin Styles */
+
+.progress-bar {
+  width: 100px;
+  height: 16px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #5cb85c;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 11px;
+  line-height: 16px;
+  color: #333;
+}
+
+/* Migration Status Styles */
+.status-uploaded { color: #f0ad4e; }
+.status-processing { color: #5bc0de; }
+.status-completed { color: #5cb85c; }
+.status-failed { color: #d9534f; }
+
+/* Source Type Labels */
+.label {
+  display: inline-block;
+  padding: 2px 4px;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 14px;
+  color: white;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 2px;
+}
+
+.label-jira { background-color: #0052cc; }
+.label-clickup { background-color: #7b68ee; }
+.label-asana { background-color: #f06a6a; }
+.label-trello { background-color: #0079bf; }
+.label-monday { background-color: #ff3d57; }
+.label-custom { background-color: #6c757d; }
+
+/* Success Rate */
+.success-rate {
+  font-size: 11px;
+  color: #5cb85c;
+  font-weight: bold;
+}
+
+/* Field Mapping Styles */
+.field-mapping {
+  margin-bottom: 20px;
+}
+
+.field-mapping-header {
+  background-color: #f8f9fa;
+  padding: 10px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px 4px 0 0;
+  font-weight: bold;
+}
+
+.field-mapping-content {
+  border: 1px solid #dee2e6;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.field-row:last-child {
+  border-bottom: none;
+}
+
+.field-header {
+  flex: 1;
+  font-weight: bold;
+  padding-right: 10px;
+}
+
+.field-sample {
+  flex: 1;
+  font-size: 11px;
+  color: #666;
+  padding-right: 10px;
+}
+
+.field-mapping-select {
+  flex: 1;
+  min-width: 150px;
+}
+
+.field-type {
+  flex: 0 0 80px;
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+}
+
+/* Custom field indicators */
+.custom-field-indicator {
+  background-color: #e7f3ff;
+  color: #004085;
+  border: 1px solid #b3d4fc;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 10px;
+  margin-left: 5px;
+}
+
+.standard-field-indicator {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 10px;
+  margin-left: 5px;
+}
+
+/* Migration details */
+.migration-details {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.migration-details h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #495057;
+}
+
+.migration-details dl {
+  margin: 0;
+}
+
+.migration-details dt {
+  font-weight: bold;
+  color: #6c757d;
+  margin-bottom: 5px;
+}
+
+.migration-details dd {
+  margin-bottom: 10px;
+  margin-left: 0;
+}
+
+/* Error summary styles */
+.error-summary {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 15px;
+}
+
+.error-summary h4 {
+  color: #721c24;
+  margin-top: 0;
+}
+
+.error-summary pre {
+  background-color: white;
+  border: 1px solid #f5c6cb;
+  border-radius: 3px;
+  padding: 10px;
+  margin: 10px 0;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+/* Processing log styles */
+.processing-log {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 10px;
+  margin-top: 15px;
+  font-family: monospace;
+  font-size: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+/* File upload area */
+.file-upload-area {
+  border: 2px dashed #dee2e6;
+  border-radius: 4px;
+  padding: 20px;
+  text-align: center;
+  background-color: #f8f9fa;
+  margin-bottom: 15px;
+}
+
+.file-upload-area.dragover {
+  border-color: #007bff;
+  background-color: #e3f2fd;
+}
+
+/* Restart button styling */
+.icon-reload {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="%23666"><path d="M8 2a6 6 0 0 1 6 6h-2a4 4 0 0 0-4-4V2z"/><path d="M2 8a6 6 0 0 1 6-6v2a4 4 0 0 0-4 4H2z"/><path d="M8 14a6 6 0 0 1-6-6h2a4 4 0 0 0 4 4v2z"/><path d="M14 8a6 6 0 0 1-6 6v-2a4 4 0 0 0 4-4h2z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px 12px;
+}
+
+.icon-reload:hover {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="%23333"><path d="M8 2a6 6 0 0 1 6 6h-2a4 4 0 0 0-4-4V2z"/><path d="M2 8a6 6 0 0 1 6-6v2a4 4 0 0 0-4 4H2z"/><path d="M8 14a6 6 0 0 1-6-6h2a4 4 0 0 0 4 4v2z"/><path d="M14 8a6 6 0 0 1-6 6v-2a4 4 0 0 0 4-4h2z"/></svg>');
+}
+
+/* Restart notification */
+.restart-notice {
+  background-color: #d1ecf1;
+  border: 1px solid #bee5eb;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 15px;
+  color: #0c5460;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .field-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .field-header,
+  .field-sample,
+  .field-mapping-select,
+  .field-type {
+    flex: none;
+    margin-bottom: 5px;
+  }
+
+  .progress-bar {
+    width: 80px;
+  }
+}

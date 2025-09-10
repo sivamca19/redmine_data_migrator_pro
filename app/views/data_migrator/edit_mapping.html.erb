@@ -1,0 +1,322 @@
+<% content_for :header_tags do %>
+  <%= stylesheet_link_tag 'data_migrator', :plugin => 'redmine_data_migrator_pro' %>
+  <%= javascript_include_tag 'data_migrator', :plugin => 'redmine_data_migrator_pro' %>
+<% end %>
+
+<% html_title "Edit Field Mapping - Migration ##{@migration.id}" %>
+
+<div class="contextual">
+  <%= link_to "Back to Migration", data_migrator_path(@migration), :class => 'icon icon-cancel' %>
+</div>
+
+<h2>Edit Field Mapping - Migration #<%= @migration.id %></h2>
+
+<div class="migration-details">
+  <h4>File Information</h4>
+  <dl>
+    <dt>File:</dt>
+    <dd><%= @migration.filename %></dd>
+
+    <dt>Source:</dt>
+    <dd><span class="label label-<%= @migration.source_type %>"><%= @migration.source_type.humanize %></span></dd>
+
+    <dt>Detected Headers:</dt>
+    <dd><%= (@analysis[:headers] || []).count %> columns</dd>
+
+    <dt>Total Rows:</dt>
+    <dd><%= @migration.total_rows %></dd>
+  </dl>
+</div>
+
+<%= form_with url: update_mapping_data_migrator_path(@migration), method: :patch, local: true, id: 'mapping-form' do |f| %>
+  <div class="box tabular">
+    <h3>Processing Configuration</h3>
+
+    <p>
+      <%= label_tag :project_id, "Target Project" %>
+      <%= select_tag :project_id, options_from_collection_for_select(@projects, :id, :name, @migration.project_id),
+          { prompt: 'Select project', required: true } %>
+    </p>
+
+    <p>
+      <%= label_tag :tracker_id, "Default Tracker" %>
+      <%= select_tag :tracker_id, options_from_collection_for_select(@trackers, :id, :name, @current_options['tracker_id']),
+          { prompt: 'Use project default' } %>
+    </p>
+
+    <p>
+      <%= label_tag :status_id, "Default Status" %>
+      <%= select_tag :status_id, options_from_collection_for_select(@issue_statuses, :id, :name, @current_options['status_id']),
+          { prompt: 'Use system default' } %>
+    </p>
+
+    <p>
+      <%= label_tag :priority_id, "Default Priority" %>
+      <%= select_tag :priority_id, options_from_collection_for_select(@priorities, :id, :name, @current_options['priority_id']),
+          { prompt: 'Use system default' } %>
+    </p>
+
+    <p>
+      <%= label_tag :chunk_size, "Chunk Size" %>
+      <%= number_field_tag :chunk_size, @current_options['chunk_size'] || 100, min: 10, max: 1000 %>
+      <em>Rows to process per batch (10-1000, default: 100)</em>
+    </p>
+  </div>
+
+  <div class="box">
+    <h3>Field Mapping</h3>
+    <p><em>Configure how each column from your file should be mapped to Redmine fields.</em></p>
+
+    <table class="list field-mapping-table">
+      <thead>
+        <tr>
+          <th style="width: 25%">File Column</th>
+          <th style="width: 25%">Sample Data</th>
+          <th style="width: 20%">Mapping Type</th>
+          <th style="width: 25%">Target Field</th>
+          <th style="width: 5%">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% (@analysis[:headers] || []).each_with_index do |header, index| %>
+          <% current_mapping = @current_mapping[header] || {} %>
+          <%
+            # Determine mapping type with smart defaults
+            if current_mapping['type'].present?
+              mapping_type = current_mapping['type']
+            elsif @analysis[:standard_fields] && @analysis[:standard_fields][header]
+              mapping_type = 'auto'
+            else
+              mapping_type = 'auto'
+            end
+          %>
+
+          <tr class="field-mapping-row">
+            <td class="field-header">
+              <strong title="<%= header %>"><%= truncate(header, length: 25) %></strong>
+              <% if @analysis[:standard_fields] && @analysis[:standard_fields][header] %>
+                <span class="standard-field-indicator">Standard Field Detected</span>
+              <% else %>
+                <span class="custom-field-indicator">Custom Field</span>
+              <% end %>
+            </td>
+
+            <td class="field-sample">
+              <% if @analysis[:sample_data] && @analysis[:sample_data].any? %>
+                <% sample_values = @analysis[:sample_data].map { |row| row[header] }.compact.first(2) %>
+                <% if sample_values.any? %>
+                  <small><%= truncate(sample_values.join(', '), length: 40) %></small>
+                <% else %>
+                  <small class="empty-sample">(empty)</small>
+                <% end %>
+              <% end %>
+            </td>
+
+            <td class="mapping-type">
+              <%= select_tag "field_mappings[#{header}][type]",
+                  options_for_select([
+                    ['Auto-detect', 'auto'],
+                    ['Manual Mapping', 'manual'],
+                    ['Ignore Column', 'ignore']
+                  ], mapping_type == 'standard' || mapping_type == 'custom' ? 'manual' : mapping_type),
+                  { class: 'mapping-type-select', data: { header: header } } %>
+            </td>
+
+            <td class="target-field">
+              <!-- Manual mapping options -->
+              <div class="manual-mapping-options" <%= 'style=display:none;' unless mapping_type == 'standard' || mapping_type == 'custom' || mapping_type == 'manual' %>>
+                <div class="manual-field-type">
+                  <%= select_tag "field_mappings[#{header}][manual_type]",
+                      options_for_select([
+                        ['Standard Redmine Field', 'standard'],
+                        ['Custom Field', 'custom']
+                      ], current_mapping['type'] == 'custom' ? 'custom' : 'standard'),
+                      { class: 'manual-type-select', data: { header: header } } %>
+                </div>
+
+                <!-- Standard fields dropdown -->
+                <div class="standard-field-options" <%= 'style=display:none;' unless (mapping_type != 'custom') %>>
+                  <%
+                    # Generate standard field options from BASE_FIELD_MAPPING
+                    standard_field_options = []
+                    FileAnalyzerService::BASE_FIELD_MAPPING.values.uniq.each do |redmine_field|
+                      standard_field_options << [redmine_field.humanize, redmine_field]
+                    end
+                    standard_field_options.sort!
+                  %>
+                  <%= select_tag "field_mappings[#{header}][field]",
+                      options_for_select(standard_field_options, current_mapping['field']),
+                      { prompt: 'Select Redmine field', class: 'standard-field-select' } %>
+                </div>
+
+                <!-- Custom fields dropdown -->
+                <div class="custom-field-options" <%= 'style=display:none;' unless mapping_type == 'custom' %>>
+                  <%= select_tag "field_mappings[#{header}][field_id]",
+                      options_from_collection_for_select(CustomField.where(type: 'IssueCustomField'), :id, :name, current_mapping['field_id']),
+                      { prompt: 'Select custom field', class: 'custom-field-select' } %>
+                </div>
+              </div>
+
+              <!-- Auto-detect info -->
+              <div class="auto-detect-info" <%= 'style=display:none;' unless mapping_type == 'auto' %>>
+                <span class="auto-suggestion">
+                  <% if @analysis[:standard_fields] && @analysis[:standard_fields][header] %>
+                    → <strong><%= @analysis[:standard_fields][header][:redmine_field].humanize %></strong> (standard field)
+                    <input type="hidden" name="field_mappings[<%= header %>][field]" value="<%= @analysis[:standard_fields][header][:redmine_field] %>">
+                  <% else %>
+                    → <strong><%= header.gsub(/[^a-zA-Z0-9\s]/, ' ').split.map(&:capitalize).join(' ') %></strong> (new custom field)
+                    <input type="hidden" name="field_mappings[<%= header %>][custom_field_name]" value="<%= header.gsub(/[^a-zA-Z0-9\s]/, ' ').split.map(&:capitalize).join(' ') %>">
+                    <input type="hidden" name="field_mappings[<%= header %>][custom_field_format]" value="<%= @analysis[:field_suggestions][header] || 'string' %>">
+                  <% end %>
+                </span>
+                <br><small class="help-text">
+                  <% if @analysis[:standard_fields] && @analysis[:standard_fields][header] %>
+                    Will map to Redmine's <%= @analysis[:standard_fields][header][:redmine_field].humanize %> field
+                  <% else %>
+                    Will create custom field: <%= @analysis[:field_suggestions][header] || 'string' %> type
+                  <% end %>
+                </small>
+              </div>
+
+              <!-- Ignore info -->
+              <div class="ignore-info" <%= 'style=display:none;' unless mapping_type == 'ignore' %>>
+                <em>This column will be ignored during import</em>
+              </div>
+            </td>
+
+            <td class="actions">
+              <a href="#" class="icon icon-help mapping-help" title="Show mapping help"></a>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    <%= submit_tag "Save Mapping", class: "btn btn-primary" %>
+    <%= link_to "Cancel", data_migrator_path(@migration), class: "btn" %>
+  </p>
+<% end %>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Handle mapping type changes
+  document.querySelectorAll('.mapping-type-select').forEach(function(select) {
+    select.addEventListener('change', function() {
+      var row = this.closest('.field-mapping-row');
+      var targetCell = row.querySelector('.target-field');
+      var selectedType = this.value;
+
+      // Hide all options
+      targetCell.querySelectorAll('.manual-mapping-options, .auto-detect-info, .ignore-info').forEach(function(el) {
+        el.style.display = 'none';
+      });
+
+      // Show relevant options
+      if (selectedType === 'manual') {
+        targetCell.querySelector('.manual-mapping-options').style.display = 'block';
+        // Show standard field options by default
+        var manualTypeSelect = targetCell.querySelector('.manual-type-select');
+        updateManualFieldOptions(targetCell, manualTypeSelect.value);
+      } else if (selectedType === 'auto') {
+        targetCell.querySelector('.auto-detect-info').style.display = 'block';
+      } else if (selectedType === 'ignore') {
+        targetCell.querySelector('.ignore-info').style.display = 'block';
+      }
+    });
+  });
+
+  // Handle manual type sub-selection
+  document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('manual-type-select')) {
+      var targetCell = e.target.closest('.target-field');
+      updateManualFieldOptions(targetCell, e.target.value);
+    }
+  });
+
+  function updateManualFieldOptions(targetCell, manualType) {
+    // Hide both sub-options
+    var standardOptions = targetCell.querySelector('.standard-field-options');
+    var customOptions = targetCell.querySelector('.custom-field-options');
+
+    if (standardOptions) standardOptions.style.display = 'none';
+    if (customOptions) customOptions.style.display = 'none';
+
+    // Show selected option
+    if (manualType === 'standard' && standardOptions) {
+      standardOptions.style.display = 'block';
+    } else if (manualType === 'custom' && customOptions) {
+      customOptions.style.display = 'block';
+    }
+  }
+
+  // Initialize manual field options for already selected rows
+  document.querySelectorAll('.manual-type-select').forEach(function(select) {
+    var targetCell = select.closest('.target-field');
+    updateManualFieldOptions(targetCell, select.value);
+  });
+});
+</script>
+
+<style>
+.field-mapping-table {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.field-mapping-table th,
+.field-mapping-table td {
+  padding: 8px;
+  vertical-align: top;
+  border: 1px solid #ddd;
+}
+
+.field-mapping-table thead th {
+  background-color: #f8f9fa;
+  font-weight: bold;
+}
+
+.field-sample .empty-sample {
+  color: #999;
+  font-style: italic;
+}
+
+.auto-suggestion {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.mapping-help {
+  cursor: pointer;
+}
+
+.target-field select {
+  width: 100%;
+}
+
+.standard-field-indicator,
+.custom-field-indicator {
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  margin-left: 5px;
+}
+
+.standard-field-indicator {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.custom-field-indicator {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.help-text {
+  color: #6c757d;
+  font-style: italic;
+}
+</style>
