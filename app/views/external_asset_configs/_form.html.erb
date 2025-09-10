@@ -72,7 +72,7 @@
 
     <div class="system-specific-fields">
       <!-- JIRA Fields -->
-      <div class="jira-fields credential-fields" style="<%= 'display: none;' unless @config.system_type == 'jira' %>">
+      <div class="jira-fields credential-fields" style="<%= @config.system_type == 'jira' ? 'display: block;' : 'display: none;' %>">
         <p>
           <%= f.label :email, 'Email Address *' %>
           <%= f.email_field :email, size: 40,
@@ -98,7 +98,7 @@
       </div>
 
       <!-- ClickUp Fields -->
-      <div class="clickup-fields credential-fields" style="<%= 'display: none;' unless @config.system_type == 'clickup' %>">
+      <div class="clickup-fields credential-fields" style="<%= @config.system_type == 'clickup' ? 'display: block;' : 'display: none;' %>">
         <p>
           <%= f.label :api_key, 'API Key *' %>
           <%= f.password_field :api_key, size: 50,
@@ -111,7 +111,7 @@
       </div>
 
       <!-- Asana Fields -->
-      <div class="asana-fields credential-fields" style="<%= 'display: none;' unless @config.system_type == 'asana' %>">
+      <div class="asana-fields credential-fields" style="<%= @config.system_type == 'asana' ? 'display: block;' : 'display: none;' %>">
         <p>
           <%= f.label :api_token, 'Personal Access Token *' %>
           <%= f.password_field :api_token, size: 50,
@@ -124,7 +124,7 @@
       </div>
 
       <!-- Trello Fields -->
-      <div class="trello-fields credential-fields" style="<%= 'display: none;' unless @config.system_type == 'trello' %>">
+      <div class="trello-fields credential-fields" style="<%= @config.system_type == 'trello' ? 'display: block;' : 'display: none;' %>">
         <p>
           <%= f.label :api_key, 'API Key *' %>
           <%= f.text_field :api_key, size: 50,
@@ -141,7 +141,7 @@
       </div>
 
       <!-- Monday Fields -->
-      <div class="monday-fields credential-fields" style="<%= 'display: none;' unless @config.system_type == 'monday' %>">
+      <div class="monday-fields credential-fields" style="<%= @config.system_type == 'monday' ? 'display: block;' : 'display: none;' %>">
         <p>
           <%= f.label :api_key, 'API Token *' %>
           <%= f.password_field :api_key, size: 50,
