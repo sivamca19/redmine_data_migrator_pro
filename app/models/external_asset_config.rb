@@ -134,13 +134,24 @@ class ExternalAssetConfig < ActiveRecord::Base
   def encrypt_credentials
     return unless changed?
 
-    self.encrypted_credentials = encrypt_sensitive_data({
-      email: email,
-      api_token: api_token,
-      api_key: api_key,
-      team_id: team_id,
-      additional_config: additional_config
-    }.compact)
+    # Start with existing encrypted data if available
+    existing_data = {}
+    if encrypted_credentials.present?
+      begin
+        existing_data = decrypt_sensitive_data(encrypted_credentials)
+      rescue StandardError => e
+        Rails.logger.error "Failed to decrypt existing credentials during save: #{e.message}"
+      end
+    end
+
+    # Merge with current virtual attributes, only overwriting non-blank values
+    new_data = existing_data.dup
+    %w[email api_token api_key team_id additional_config].each do |field|
+      value = send(field)
+      new_data[field] = value if value.present?
+    end
+
+    self.encrypted_credentials = encrypt_sensitive_data(new_data)
   end
 
   def decrypt_credentials
