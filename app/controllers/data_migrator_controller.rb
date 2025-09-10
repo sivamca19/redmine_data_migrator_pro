@@ -28,7 +28,8 @@ class DataMigratorController < ApplicationController
 
   def upload
     uploaded_file = params[:data_migration][:file]
-    upload_service = FileUploadService.new(migration_params, uploaded_file, User.current)
+    migration_data = migration_params.except(:file)
+    upload_service = FileUploadService.new(migration_data, uploaded_file, User.current)
     result = upload_service.upload_and_analyze
 
     if result[:success]
@@ -36,7 +37,7 @@ class DataMigratorController < ApplicationController
       redirect_to data_migrator_path(@migration)
     else
       @migrations = DataMigration.recent.limit(20)
-      @migration = DataMigration.new(migration_params)
+      @migration = DataMigration.new(migration_data)
       @migration.errors.add(:file, result[:errors].first)
       render :index
     end
@@ -226,7 +227,7 @@ class DataMigratorController < ApplicationController
   end
 
   def migration_params
-    params.require(:data_migration).permit(:source_type, :description)
+    params.require(:data_migration).permit(:source_type, :description, :file)
   end
 
   def processing_options_params
