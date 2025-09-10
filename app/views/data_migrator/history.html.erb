@@ -134,16 +134,9 @@
     </tbody>
   </table>
 
-  <% if respond_to?(:paginate) %>
-    <%= paginate @migrations %>
-  <% else %>
-    <p class="pagination">
-      <%= link_to_if @migrations.respond_to?(:prev_page) && @migrations.prev_page,
-          "« Previous", params.merge(page: @migrations.prev_page) %>
-      <%= link_to_if @migrations.respond_to?(:next_page) && @migrations.next_page,
-          "Next »", params.merge(page: @migrations.next_page) %>
-    </p>
-  <% end %>
+  <p class="info">
+    <em>Showing the latest 50 migrations.</em>
+  </p>
 
 <% else %>
   <p class="nodata">No migrations found. <%= link_to "Start your first migration", data_migrator_index_path %>.</p>
@@ -153,7 +146,7 @@
 <div class="box">
   <h3>Statistics</h3>
   <%
-    total_migrations = @migrations.respond_to?(:total_count) ? @migrations.total_count : DataMigration.count
+    total_migrations = DataMigration.count
     completed_count = DataMigration.completed.count
     failed_count = DataMigration.failed.count
     processing_count = DataMigration.processing.count
