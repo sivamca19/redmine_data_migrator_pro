@@ -42,7 +42,7 @@
   font-size: 11px;
   padding: 2px 6px;
   background-color: #337AB7;
-  color: white;
+  color: white !important;
   text-decoration: none;
   border-radius: 2px;
 }
@@ -205,12 +205,12 @@
   .attributes .attribute {
     flex-direction: column;
   }
-  
+
   .attributes .label {
     width: auto;
     margin-bottom: 3px;
   }
-  
+
   table.list td.buttons {
     white-space: nowrap;
   }

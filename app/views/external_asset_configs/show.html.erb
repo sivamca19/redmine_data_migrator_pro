@@ -107,7 +107,7 @@
             <% @config.data_migrations.recent.limit(5).each do |migration| %>
               <li>
                 <%= link_to "Migration ##{migration.id}", data_migrator_path(migration) %>
-                (<%= migration.filename %>) - <%= time_tag(migration.created_at, format: :short) %>
+                (<%= migration.filename %>) - <%= time_tag(migration.created_at) %>
               </li>
             <% end %>
             <% if @config.data_migrations.count > 5 %>
