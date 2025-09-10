@@ -7,24 +7,10 @@ class FileAnalyzerService
     created updated due_date parent_task versions application attachment comment
   ].freeze
 
-  BASE_FIELD_MAPPING = {
-    'id' => 'external_id',
-    'subject' => 'subject',
-    'description' => 'description',
-    'status' => 'status',
-    'priority' => 'priority',
-    'assignee' => 'assignee',
-    'reporter' => 'reporter',
-    'tracker' => 'tracker',
-    'created' => 'created_on',
-    'updated' => 'updated_on',
-    'due date' => 'due_date',
-    'parent task' => 'parent_issue',
-    'attachment' => 'attachment',
-    'attachments' => 'attachment',
-    'comment' => 'comment',
-    'comments' => 'comment'
-  }.freeze
+  SAMPLE_DATA_LIMIT = 2
+  MAX_SAMPLE_TEXT_LENGTH = 50
+
+  attr_reader :file_path, :source_type, :headers, :sample_data
 
   def initialize(file_path, source_type = 'jira')
     @file_path = file_path
@@ -39,10 +25,7 @@ class FileAnalyzerService
     {
       headers: @headers,
       total_columns: @headers.length,
-      sample_data: @sample_data.first(2).map { |row|
-        # Limit sample data size to prevent session overflow
-        row.transform_values { |v| v.to_s.truncate(50) }
-      },
+      sample_data: truncated_sample_data,
       standard_fields: map_standard_fields,
       custom_fields: identify_custom_fields,
       field_suggestions: suggest_field_mapping
@@ -50,62 +33,12 @@ class FileAnalyzerService
   end
 
   def create_custom_fields_for_project(project_id)
-    custom_fields = identify_custom_fields
     project = Project.find(project_id)
-    created_fields = []
+    custom_field_creator = CustomFieldCreatorService.new(project)
 
-    custom_fields.each do |field_info|
-      field_name = field_info[:name]
-      field_type = field_info[:suggested_type]
-
-      # Check if custom field already exists
-      existing_field = CustomField.where(
-        name: field_name,
-        type: 'IssueCustomField'
-      ).first
-
-      unless existing_field
-        # Prepare custom field attributes
-        cf_attributes = {
-          name: field_name,
-          field_format: field_type,
-          is_required: false,
-          is_for_all: false,
-          is_filter: true,
-          searchable: true,
-          editable: true,
-          visible: true
-        }
-
-        # Add possible values for list-type fields
-        if %w[list enumeration].include?(field_type)
-          cf_attributes[:possible_values] = ['Option 1', 'Option 2', 'Option 3']
-        end
-
-        custom_field = IssueCustomField.create!(cf_attributes)
-
-        # Enable for specific trackers if needed
-        custom_field.trackers = project.trackers
-        custom_field.save!
-
-        created_fields << {
-          id: custom_field.id,
-          name: custom_field.name,
-          format: custom_field.field_format,
-          original_header: field_info[:original_header]
-        }
-      else
-        created_fields << {
-          id: existing_field.id,
-          name: existing_field.name,
-          format: existing_field.field_format,
-          original_header: field_info[:original_header],
-          existing: true
-        }
-      end
+    identify_custom_fields.map do |field_info|
+      custom_field_creator.find_or_create_field(field_info)
     end
-
-    created_fields
   end
 
   private
@@ -126,8 +59,8 @@ class FileAnalyzerService
       if index == 0
         @headers = row.headers.map(&:to_s)
       end
-      @sample_data << row.to_h if index < 2  # Reduce to 2 samples
-      break if index >= 2
+      @sample_data << row.to_h if index < SAMPLE_DATA_LIMIT
+      break if index >= SAMPLE_DATA_LIMIT
     end
   end
 
@@ -142,7 +75,7 @@ class FileAnalyzerService
     attachment_headers = @headers.select { |h| h.downcase.include?('attachment') || h.downcase.include?('file') || h.downcase.include?('url') }
     puts "FileAnalyzer detected attachment columns: #{attachment_headers.join(', ')}" if attachment_headers.any?
 
-    (2..3).each do |row_num|  # Get 2 sample rows
+    (2..(SAMPLE_DATA_LIMIT + 1)).each do |row_num|
       break if row_num > sheet.last_row
       row_data = {}
       @headers.each_with_index do |header, col_index|
@@ -223,56 +156,7 @@ class FileAnalyzerService
   end
 
   def get_field_mapping_for_source
-    case @source_type
-    when 'jira'
-      BASE_FIELD_MAPPING.merge({
-        'jira id' => 'external_id'
-      })
-    when 'clickup'
-      BASE_FIELD_MAPPING.merge({
-        'task id' => 'external_id',
-        'task name' => 'subject',
-        'list' => 'project',
-        'folder' => 'category',
-        'space' => 'version',
-        'assignees' => 'assignee',
-        'tags' => 'category'
-      })
-    when 'asana'
-      BASE_FIELD_MAPPING.merge({
-        'task id' => 'external_id',
-        'task name' => 'subject',
-        'project' => 'project',
-        'section' => 'category',
-        'completed' => 'status',
-        'completed at' => 'closed_on',
-        'assignee' => 'assignee',
-        'tags' => 'category'
-      })
-    when 'trello'
-      BASE_FIELD_MAPPING.merge({
-        'card id' => 'external_id',
-        'card name' => 'subject',
-        'list name' => 'status',
-        'board name' => 'project',
-        'labels' => 'category',
-        'members' => 'assignee',
-        'date created' => 'created_on',
-        'date last activity' => 'updated_on'
-      })
-    when 'monday'
-      BASE_FIELD_MAPPING.merge({
-        'item id' => 'external_id',
-        'item name' => 'subject',
-        'group' => 'category',
-        'board' => 'project',
-        'person' => 'assignee',
-        'timeline' => 'due_date',
-        'creation log' => 'created_on'
-      })
-    else
-      BASE_FIELD_MAPPING
-    end
+    field_mapping_service.get_mapping
   end
 
   def normalize_header(header)
@@ -309,6 +193,18 @@ class FileAnalyzerService
   end
 
   def get_sample_values_for_header(header)
-    @sample_data.map { |row| row[header] }.compact.first(2)
+    @sample_data.map { |row| row[header] }.compact.first(SAMPLE_DATA_LIMIT)
+  end
+
+  private
+
+  def truncated_sample_data
+    @sample_data.first(SAMPLE_DATA_LIMIT).map do |row|
+      row.transform_values { |v| v.to_s.truncate(MAX_SAMPLE_TEXT_LENGTH) }
+    end
+  end
+
+  def field_mapping_service
+    @field_mapping_service ||= SourceFieldMappingService.new(@source_type)
   end
 end
