@@ -58,7 +58,7 @@
             <% if migration.external_asset_config %>
               <%= link_to truncate(migration.external_asset_config.name, length: 15),
                           external_asset_config_path(migration.external_asset_config),
-                          title: migration.external_asset_config.display_name %>
+                          title: migration.external_asset_config.name %>
             <% else %>
               <span class="inactive">None</span>
             <% end %>

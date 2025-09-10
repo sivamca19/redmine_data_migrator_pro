@@ -21,7 +21,7 @@
     <p>
       <%= f.label :external_asset_config_id, "Asset Configuration" %>
       <%= f.select :external_asset_config_id,
-          options_for_select(@external_configs.map { |config| [config.display_name, config.id] }, @migration.external_asset_config_id),
+          options_for_select(@external_configs.map { |config| [config.name, config.id] }, @migration.external_asset_config_id),
           { prompt: 'Select asset configuration' },
           { required: true, id: 'data_migration_external_asset_config_id' } %>
       <em class="info">
@@ -97,7 +97,7 @@
           </td>
           <td class="config">
             <% if migration.external_asset_config %>
-              <span title="<%= migration.external_asset_config.display_name %>">
+              <span title="<%= migration.external_asset_config.name %>">
                 <%= truncate(migration.external_asset_config.name, length: 12) %>
               </span>
             <% else %>

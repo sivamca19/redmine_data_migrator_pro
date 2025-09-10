@@ -31,7 +31,7 @@
     <dt>External Asset Config:</dt>
     <dd>
       <% if @migration.external_asset_config %>
-        <%= link_to @migration.external_asset_config.display_name,
+        <%= link_to @migration.external_asset_config.name,
                     external_asset_config_path(@migration.external_asset_config) %>
         <small class="description">(<%= @migration.external_asset_config.system_type.humanize %>)</small>
       <% else %>
