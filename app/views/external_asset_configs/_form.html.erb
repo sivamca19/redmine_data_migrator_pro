@@ -87,7 +87,7 @@
                               placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your JIRA API token' %>
           <em class="info">
             <% if @config.persisted? %>
-              Leave blank to keep existing token.
+              Leave blank to keep existing token, or enter new token to replace.
             <% end %>
             Generate from
             <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank">

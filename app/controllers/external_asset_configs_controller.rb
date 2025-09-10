@@ -32,46 +32,18 @@ class ExternalAssetConfigsController < ApplicationController
 
   def edit
     @projects = Project.active.has_module(:issue_tracking)
+    # Load existing credentials into virtual attributes for form display
+    @config.load_credentials_to_attributes
   end
 
   def update
-    # Handle credential updates carefully to preserve existing values
-    update_params = config_params.dup
-
-    if @config.persisted?
-      # First, decrypt and load existing credentials into virtual attributes
-      @config.load_credentials_to_attributes
-
-      # For existing records, preserve current credentials if form fields are blank
-      ['email', 'api_token', 'api_key', 'team_id', 'additional_config'].each do |field|
-        if update_params[field.to_sym].blank?
-          # Remove from update params to prevent overwriting
-          update_params.delete(field.to_sym)
-          # Virtual attribute already has current value from decrypt_credentials
-        else
-          # New value provided, set the virtual attribute
-          @config.send("#{field}=", update_params[field.to_sym])
-        end
-      end
-
-      # Update non-credential fields normally
-      non_credential_params = update_params.except(:email, :api_token, :api_key, :team_id, :additional_config)
-      success = @config.update(non_credential_params)
-
-      # If non-credential update succeeded and we have credential changes, save them
-      if success && (['email', 'api_token', 'api_key', 'team_id', 'additional_config'].any? { |f| config_params[f.to_sym].present? })
-        @config.save  # This will trigger encrypt_credentials callback
-      end
-    else
-      # For new records, update normally
-      success = @config.update(update_params)
-    end
-
-    if success
+    if @config.update(config_params)
       flash[:notice] = "Configuration '#{@config.name}' was successfully updated."
       redirect_to external_asset_configs_path
     else
       @projects = Project.active.has_module(:issue_tracking)
+      # Load credentials for form redisplay
+      @config.load_credentials_to_attributes
       render :edit
     end
   end
