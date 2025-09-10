@@ -106,7 +106,7 @@ class ExternalAssetConfig < ActiveRecord::Base
     begin
       decrypted = decrypt_sensitive_data(encrypted_credentials)
       return false unless decrypted.is_a?(Hash)
-      
+
       case system_type
       when 'jira'
         email_present = decrypted['email'].to_s.strip.present?
@@ -132,9 +132,6 @@ class ExternalAssetConfig < ActiveRecord::Base
   end
 
   def encrypt_credentials
-    return unless changed?
-
-    # Start with existing encrypted data if available
     existing_data = {}
     if encrypted_credentials.present?
       begin
@@ -144,19 +141,14 @@ class ExternalAssetConfig < ActiveRecord::Base
       end
     end
 
-    # Merge with current virtual attributes, only overwriting when values are provided
     new_data = existing_data.dup
     %w[email api_token api_key team_id additional_config].each do |field|
       value = send(field)
-      # Only update if value is not nil and not an empty string
-      # This preserves existing values when fields are left blank
       if value.present?
         new_data[field] = value
       elsif value == '' && !existing_data.key?(field)
-        # For new records, empty strings should be stored
         new_data[field] = value
       end
-      # If value is nil or blank and existing_data has the field, keep existing value
     end
 
     self.encrypted_credentials = encrypt_sensitive_data(new_data)
