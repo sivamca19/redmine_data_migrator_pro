@@ -59,6 +59,11 @@ class ExternalAssetConfigsController < ApplicationController
   end
 
   def test_connection
+    # Prevent caching of connection test results
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+
     result = @config.test_connection
 
     respond_to do |format|

@@ -49,6 +49,10 @@ function handleTestConnection(e) {
     url: $btn.attr('href'),
     type: 'GET',
     dataType: 'json',
+    cache: false,
+    data: {
+      _: new Date().getTime() // Cache buster
+    },
     success: function(response) {
       console.log('Connection test response:', response);
       handleTestConnectionResponse(response, $btn, originalText);

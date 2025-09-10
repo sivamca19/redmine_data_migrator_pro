@@ -19,9 +19,8 @@ module AdminBreadcrumbsHelper
 
   def build_breadcrumbs(config)
     breadcrumbs = []
-    breadcrumbs << link_to(l(:label_administration), administration_path) if config[:show_admin]
     breadcrumbs << link_to(config[:section_name], config[:section_path]) if config[:section_name]
-    
+
     case config[:action] || action_name
     when 'show'
       breadcrumbs << config[:item_name] if config[:item_name]
@@ -35,7 +34,7 @@ module AdminBreadcrumbsHelper
     when 'history'
       breadcrumbs << (config[:history_label] || 'History')
     end
-    
+
     breadcrumbs
   end
 end
