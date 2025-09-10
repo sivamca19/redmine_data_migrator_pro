@@ -137,9 +137,10 @@
                 <!-- Standard fields dropdown -->
                 <div class="standard-field-options" <%= 'style=display:none;' unless (mapping_type != 'custom') %>>
                   <%
-                    # Generate standard field options from BASE_FIELD_MAPPING
+                    # Generate standard field options from SourceFieldMappingService
                     standard_field_options = []
-                    FileAnalyzerService::BASE_FIELD_MAPPING.values.uniq.each do |redmine_field|
+                    mapping_service = SourceFieldMappingService.new(@migration.source_type)
+                    mapping_service.get_mapping.values.uniq.each do |redmine_field|
                       standard_field_options << [redmine_field.humanize, redmine_field]
                     end
                     standard_field_options.sort!
