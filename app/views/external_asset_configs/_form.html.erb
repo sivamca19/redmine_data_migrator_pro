@@ -99,58 +99,66 @@
 
       <!-- ClickUp Fields -->
       <div class="clickup-fields credential-fields" style="<%= @config.system_type == 'clickup' ? 'display: block;' : 'display: none;' %>">
-        <p>
-          <%= f.label :api_key, 'API Key *' %>
-          <%= f.password_field :api_key, size: 50,
-                              placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'pk_your_api_key_here' %>
-          <em class="info">
-            <% if @config.persisted? %>Leave blank to keep existing key. <% end %>
-            Generate from ClickUp Settings > Apps > API
-          </em>
-        </p>
+        <% if @config.system_type == 'clickup' %>
+          <p>
+            <%= f.label :api_key, 'API Key *' %>
+            <%= f.password_field :api_key, size: 50,
+                                placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'pk_your_api_key_here' %>
+            <em class="info">
+              <% if @config.persisted? %>Leave blank to keep existing key. <% end %>
+              Generate from ClickUp Settings > Apps > API
+            </em>
+          </p>
+        <% end %>
       </div>
 
       <!-- Asana Fields -->
       <div class="asana-fields credential-fields" style="<%= @config.system_type == 'asana' ? 'display: block;' : 'display: none;' %>">
-        <p>
-          <%= f.label :api_token, 'Personal Access Token *' %>
-          <%= f.password_field :api_token, size: 50,
-                              placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Asana personal access token' %>
-          <em class="info">
-            <% if @config.persisted? %>Leave blank to keep existing token. <% end %>
-            Generate from Asana Developer Console
-          </em>
-        </p>
+        <% if @config.system_type == 'asana' %>
+          <p>
+            <%= f.label :api_token, 'Personal Access Token *' %>
+            <%= f.password_field :api_token, size: 50,
+                                placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Asana personal access token' %>
+            <em class="info">
+              <% if @config.persisted? %>Leave blank to keep existing token. <% end %>
+              Generate from Asana Developer Console
+            </em>
+          </p>
+        <% end %>
       </div>
 
       <!-- Trello Fields -->
       <div class="trello-fields credential-fields" style="<%= @config.system_type == 'trello' ? 'display: block;' : 'display: none;' %>">
-        <p>
-          <%= f.label :api_key, 'API Key *' %>
-          <%= f.text_field :api_key, size: 50,
-                           placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Trello API key',
-                           value: @config.persisted? ? (@config.api_key || '[Configured]') : '' %>
-        </p>
+        <% if @config.system_type == 'trello' %>
+          <p>
+            <%= f.label :api_key, 'API Key *' %>
+            <%= f.text_field :api_key, size: 50,
+                             placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Trello API key',
+                             value: @config.persisted? ? (@config.api_key || '[Configured]') : '' %>
+          </p>
 
-        <p>
-          <%= f.label :api_token, 'API Token *' %>
-          <%= f.password_field :api_token, size: 50,
-                              placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Trello API token' %>
-          <% if @config.persisted? %><em class="info">Leave blank to keep existing token</em><% end %>
-        </p>
+          <p>
+            <%= f.label :api_token, 'API Token *' %>
+            <%= f.password_field :api_token, size: 50,
+                                placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Trello API token' %>
+            <% if @config.persisted? %><em class="info">Leave blank to keep existing token</em><% end %>
+          </p>
+        <% end %>
       </div>
 
       <!-- Monday Fields -->
       <div class="monday-fields credential-fields" style="<%= @config.system_type == 'monday' ? 'display: block;' : 'display: none;' %>">
-        <p>
-          <%= f.label :api_key, 'API Token *' %>
-          <%= f.password_field :api_key, size: 50,
-                              placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Monday.com API token' %>
-          <em class="info">
-            <% if @config.persisted? %>Leave blank to keep existing token. <% end %>
-            Generate from Monday.com API settings
-          </em>
-        </p>
+        <% if @config.system_type == 'monday' %>
+          <p>
+            <%= f.label :api_key, 'API Token *' %>
+            <%= f.password_field :api_key, size: 50,
+                                placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Monday.com API token' %>
+            <em class="info">
+              <% if @config.persisted? %>Leave blank to keep existing token. <% end %>
+              Generate from Monday.com API settings
+            </em>
+          </p>
+        <% end %>
       </div>
     </div>
 
