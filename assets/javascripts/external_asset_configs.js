@@ -1,91 +1,98 @@
 // External Asset Configurations JavaScript
-
 $(document).ready(function() {
-
-  // System type selector change handler
-  $('.system-type-selector').on('change', function() {
-    var selectedSystem = $(this).val();
-    loadCredentialFields(selectedSystem);
-  });
-
-  // Advanced settings toggle
-  $('.toggle-advanced').on('click', function(e) {
-    e.preventDefault();
-    var $advanced = $('.advanced-section');
-    var $link = $(this);
-
-    if ($advanced.is(':visible')) {
-      $advanced.slideUp();
-      $link.text('Show Advanced Settings');
-    } else {
-      $advanced.slideDown();
-      $link.text('Hide Advanced Settings');
-    }
-  });
-
-  // Test connection handler
-  $('.test-connection-btn').on('click', function(e) {
-    e.preventDefault();
-    var $btn = $(this);
-    var configId = $btn.data('config-id');
-    var originalText = $btn.text();
-
-    // Disable button and show loading
-    $btn.prop('disabled', true).text('Testing...');
-
-    // Clear previous results
-    $('#connection-test-result').hide();
-    $('.test-connection-result').removeClass('success error').text('');
-
-    $.ajax({
-      url: $btn.attr('href'),
-      type: 'GET',
-      dataType: 'json',
-      success: function(response) {
-        handleTestConnectionResponse(response, $btn, originalText);
-      },
-      error: function(xhr, status, error) {
-        handleTestConnectionError(xhr, $btn, originalText);
-      }
-    });
-  });
-
-  // Initialize form on page load
+  initializeEventHandlers();
   initializeForm();
 });
 
+function initializeEventHandlers() {
+  // System type selector change handler
+  $('.system-type-selector').on('change', function() {
+    loadCredentialFields($(this).val());
+  });
+
+  // Advanced settings toggle
+  $('.toggle-advanced').on('click', toggleAdvancedSettings);
+
+  // Test connection handler
+  $(document).on('click', '.test-connection-btn', handleTestConnection);
+}
+
+function toggleAdvancedSettings(e) {
+  e.preventDefault();
+  var $advanced = $('.advanced-section');
+  var $link = $(this);
+
+  if ($advanced.is(':visible')) {
+    $advanced.slideUp();
+    $link.text('Show Advanced Settings');
+  } else {
+    $advanced.slideDown();
+    $link.text('Hide Advanced Settings');
+  }
+}
+
+function handleTestConnection(e) {
+  e.preventDefault();
+  var $btn = $(this);
+  var originalText = $btn.text();
+
+  // Disable button and show loading
+  $btn.prop('disabled', true).text('Testing...');
+  clearPreviousResults();
+
+  $.ajax({
+    url: $btn.attr('href'),
+    type: 'GET',
+    dataType: 'json',
+    success: function(response) {
+      handleTestConnectionResponse(response, $btn, originalText);
+    },
+    error: function(xhr) {
+      handleTestConnectionError(xhr, $btn, originalText);
+    }
+  });
+}
+
+function clearPreviousResults() {
+  $('#connection-test-result').hide();
+  $('.test-connection-result').removeClass('success error').text('');
+}
+
 function loadCredentialFields(systemType) {
   var $container = $('.system-specific-fields');
-  var configId = $container.data('config-id');
-  var isPersisted = $container.data('persisted');
 
   if (!systemType) {
-    $container.html('');
+    $container.empty();
     return;
   }
 
-  // Show loading indicator
-  $container.html('<p class="loading">Loading credential fields...</p>');
+  showLoadingState($container);
 
-  // Make AJAX request to load the fields
   $.ajax({
     url: '/external_asset_configs/system_fields',
     type: 'GET',
     data: {
       system_type: systemType,
-      config_id: configId,
-      persisted: isPersisted
+      config_id: $container.data('config-id'),
+      persisted: $container.data('persisted')
     },
     success: function(html) {
       $container.html(html);
-      // Update required field indicators after loading new fields
       updateRequiredFields(systemType);
     },
-    error: function(xhr, status, error) {
-      $container.html('<p class="error">Failed to load credential fields. Please try again.</p>');
-      console.error('Failed to load credential fields:', error);
+    error: function(xhr) {
+      showErrorState($container, 'Failed to load credential fields. Please try again.');
+      console.error('Failed to load credential fields:', xhr.responseText || xhr.statusText);
     }
   });
+}
+
+function showLoadingState($container) {
+  $container.html('<p class="loading">Loading credential fields...</p>');
+}
+
+function showErrorState($container, message) {
+  $container.html('<p class="error">' + message + '</p>');
 }
 
 function updateRequiredFields(systemType) {

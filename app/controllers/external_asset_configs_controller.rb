@@ -70,15 +70,12 @@ class ExternalAssetConfigsController < ApplicationController
   end
 
   def system_fields
-    @config = params[:config_id].present? ? ExternalAssetConfig.find(params[:config_id]) : ExternalAssetConfig.new
+    @config = find_or_build_config
     @config.system_type = params[:system_type]
     @config.load_credentials_to_attributes if @config.persisted?
 
-    respond_to do |format|
-      format.html do
-        render partial: 'system_fields_content', locals: { system_type: params[:system_type], config: @config }
-      end
-    end
+    render partial: 'system_fields_content',
+           locals: { system_type: params[:system_type], config: @config }
   end
 
   private
@@ -86,8 +83,12 @@ class ExternalAssetConfigsController < ApplicationController
   def find_config
     @config = ExternalAssetConfig.find(params[:id])
   rescue ActiveRecord::RecordNotFound
-    flash[:error] = "Configuration not found."
+    flash[:error] = 'Configuration not found.'
     redirect_to external_asset_configs_path
+  end
+
+  def find_or_build_config
+    params[:config_id].present? ? ExternalAssetConfig.find(params[:config_id]) : ExternalAssetConfig.new
   end
 
   def config_params

@@ -1,26 +1,32 @@
 # External Asset Configuration model for accessing JIRA, ClickUp, and other PM tool assets
 # Stores encrypted credentials for secure access to external attachment/file systems
 class ExternalAssetConfig < ActiveRecord::Base
+  # Constants
   SUPPORTED_SYSTEMS = %w[jira clickup asana trello monday].freeze
   STATUSES = %w[active inactive].freeze
 
   # Virtual attributes for form handling
   attr_accessor :email, :api_token, :api_key, :team_id, :additional_config
 
-  has_many :data_migrations
+  # Associations
+  has_many :data_migrations, dependent: :restrict_with_error
 
-  validates :name, presence: true, uniqueness: true
+  # Validations
+  validates :name, presence: true, uniqueness: true, length: { maximum: 255 }
   validates :system_type, presence: true, inclusion: { in: SUPPORTED_SYSTEMS }
   validates :status, presence: true, inclusion: { in: STATUSES }
-  validates :base_url, presence: true, format: { with: URI::DEFAULT_PARSER.make_regexp(%w[http https]) }
+  validates :base_url, presence: true,
+                       format: { with: URI::DEFAULT_PARSER.make_regexp(%w[http https]) },
+                       length: { maximum: 500 }
+  validates :description, length: { maximum: 1000 }
 
+  # Scopes
   scope :active, -> { where(status: 'active') }
   scope :by_system_type, ->(type) { where(system_type: type) }
 
-  # Encrypt sensitive fields
+  # Callbacks
   before_save :encrypt_credentials
   after_find :decrypt_credentials
-
 
   def system_type_humanized
     system_type.humanize
@@ -53,30 +59,13 @@ class ExternalAssetConfig < ActiveRecord::Base
   end
 
   def credentials_configured?
-    # For persisted records, check if encrypted credentials exist
-    if persisted?
-      return encrypted_credentials.present? && has_required_credentials_in_storage?
-    end
+    return stored_credentials_valid? if persisted?
 
-    # For new records, check virtual attributes
-    case system_type
-    when 'jira'
-      email.present? && api_token.present?
-    when 'clickup'
-      api_key.present?
-    when 'asana'
-      api_token.present?
-    when 'trello'
-      api_key.present? && api_token.present?
-    when 'monday'
-      api_key.present?
-    else
-      true
-    end
+    virtual_credentials_valid?
   end
 
   # Get credentials for AttachmentDownloadService
-  def get_auth_credentials
+  def auth_credentials
     {
       email: email,
       api_token: api_token,
@@ -92,6 +81,27 @@ class ExternalAssetConfig < ActiveRecord::Base
   end
 
   private
+
+  def stored_credentials_valid?
+    encrypted_credentials.present? && has_required_credentials_in_storage?
+  end
+
+  def virtual_credentials_valid?
+    case system_type
+    when 'jira'
+      email.present? && api_token.present?
+    when 'clickup'
+      api_key.present?
+    when 'asana'
+      api_token.present?
+    when 'trello'
+      api_key.present? && api_token.present?
+    when 'monday'
+      api_key.present?
+    else
+      true
+    end
+  end
 
   def has_required_credentials_in_storage?
     return false unless encrypted_credentials.present?
@@ -173,49 +183,48 @@ class ExternalAssetConfig < ActiveRecord::Base
   end
 
   def test_jira_connection
-    return { success: false, message: "Email and API token required" } unless credentials_configured?
+    return { success: false, message: 'Email and API token required' } unless credentials_configured?
 
-    begin
-      uri = URI("#{base_url}/rest/api/2/myself")
-      request = Net::HTTP::Get.new(uri)
-      request.basic_auth(email, api_token)
-
-      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == 'https') do |http|
-        http.request(request)
-      end
-
-      if response.code == '200'
-        user_data = JSON.parse(response.body)
-        { success: true, message: "Connected successfully as #{user_data['displayName']}" }
-      else
-        { success: false, message: "HTTP #{response.code}: #{response.message}" }
-      end
-    rescue => e
-      { success: false, message: "Connection failed: #{e.message}" }
-    end
+    make_http_request(
+      "#{base_url}/rest/api/2/myself",
+      auth: :basic,
+      success_message: ->(data) { "Connected successfully as #{data['displayName']}" }
+    )
   end
 
   def test_clickup_connection
-    return { success: false, message: "API key required" } unless credentials_configured?
+    return { success: false, message: 'API key required' } unless credentials_configured?
 
-    begin
-      uri = URI("#{base_url}/api/v2/user")
-      request = Net::HTTP::Get.new(uri)
+    make_http_request(
+      "#{base_url}/api/v2/user",
+      auth: :bearer,
+      success_message: ->(data) { "Connected successfully as #{data['user']['username']}" }
+    )
+  end
+
+  def make_http_request(url, auth:, success_message:)
+    uri = URI(url)
+    request = Net::HTTP::Get.new(uri)
+
+    case auth
+    when :basic
+      request.basic_auth(email, api_token)
+    when :bearer
       request['Authorization'] = api_key
-
-      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == 'https') do |http|
-        http.request(request)
-      end
-
-      if response.code == '200'
-        user_data = JSON.parse(response.body)
-        { success: true, message: "Connected successfully as #{user_data['user']['username']}" }
-      else
-        { success: false, message: "HTTP #{response.code}: #{response.message}" }
-      end
-    rescue => e
-      { success: false, message: "Connection failed: #{e.message}" }
     end
+
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == 'https') do |http|
+      http.request(request)
+    end
+
+    if response.code == '200'
+      user_data = JSON.parse(response.body)
+      { success: true, message: success_message.call(user_data) }
+    else
+      { success: false, message: "HTTP #{response.code}: #{response.message}" }
+    end
+  rescue StandardError => e
+    { success: false, message: "Connection failed: #{e.message}" }
   end
 
 end
