@@ -20,7 +20,7 @@ class ExternalAssetConfigsController < ApplicationController
 
   def create
     @config = ExternalAssetConfig.new(config_params)
-    
+
     if @config.save
       flash[:notice] = "External asset configuration '#{@config.name}' was successfully created."
       redirect_to external_asset_configs_path
@@ -35,7 +35,15 @@ class ExternalAssetConfigsController < ApplicationController
   end
 
   def update
-    if @config.update(config_params)
+    # Filter out empty credential fields to preserve existing values
+    filtered_params = config_params
+    if @config.persisted?
+      ['email', 'api_token', 'api_key', 'team_id'].each do |field|
+        filtered_params.delete(field) if filtered_params[field].blank?
+      end
+    end
+
+    if @config.update(filtered_params)
       flash[:notice] = "Configuration '#{@config.name}' was successfully updated."
       redirect_to external_asset_configs_path
     else
@@ -46,20 +54,20 @@ class ExternalAssetConfigsController < ApplicationController
 
   def destroy
     name = @config.name
-    
+
     if @config.data_migrations.any?
       flash[:error] = "Cannot delete configuration '#{name}' because it is used by #{@config.data_migrations.count} migration(s)."
     else
       @config.destroy
       flash[:notice] = "Configuration '#{name}' was successfully deleted."
     end
-    
+
     redirect_to external_asset_configs_path
   end
 
   def test_connection
     result = @config.test_connection
-    
+
     respond_to do |format|
       format.json do
         render json: {

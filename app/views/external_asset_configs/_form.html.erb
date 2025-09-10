@@ -76,15 +76,19 @@
         <p>
           <%= f.label :email, 'Email Address *' %>
           <%= f.email_field :email, size: 40,
-                            placeholder: 'your-email@domain.com' %>
+                            placeholder: 'your-email@domain.com',
+                            value: @config.persisted? ? (@config.email || '[Configured]') : '' %>
           <em class="info">JIRA user email address</em>
         </p>
 
         <p>
           <%= f.label :api_token, 'API Token *' %>
           <%= f.password_field :api_token, size: 40,
-                              placeholder: 'Your JIRA API token' %>
+                              placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your JIRA API token' %>
           <em class="info">
+            <% if @config.persisted? %>
+              Leave blank to keep existing token.
+            <% end %>
             Generate from
             <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank">
               Atlassian Account Settings
@@ -98,8 +102,9 @@
         <p>
           <%= f.label :api_key, 'API Key *' %>
           <%= f.password_field :api_key, size: 50,
-                              placeholder: 'pk_your_api_key_here' %>
+                              placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'pk_your_api_key_here' %>
           <em class="info">
+            <% if @config.persisted? %>Leave blank to keep existing key. <% end %>
             Generate from ClickUp Settings > Apps > API
           </em>
         </p>
@@ -110,8 +115,9 @@
         <p>
           <%= f.label :api_token, 'Personal Access Token *' %>
           <%= f.password_field :api_token, size: 50,
-                              placeholder: 'Your Asana personal access token' %>
+                              placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Asana personal access token' %>
           <em class="info">
+            <% if @config.persisted? %>Leave blank to keep existing token. <% end %>
             Generate from Asana Developer Console
           </em>
         </p>
@@ -122,13 +128,15 @@
         <p>
           <%= f.label :api_key, 'API Key *' %>
           <%= f.text_field :api_key, size: 50,
-                           placeholder: 'Your Trello API key' %>
+                           placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Trello API key',
+                           value: @config.persisted? ? (@config.api_key || '[Configured]') : '' %>
         </p>
 
         <p>
           <%= f.label :api_token, 'API Token *' %>
           <%= f.password_field :api_token, size: 50,
-                              placeholder: 'Your Trello API token' %>
+                              placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Trello API token' %>
+          <% if @config.persisted? %><em class="info">Leave blank to keep existing token</em><% end %>
         </p>
       </div>
 
@@ -137,7 +145,11 @@
         <p>
           <%= f.label :api_key, 'API Token *' %>
           <%= f.password_field :api_key, size: 50,
-                              placeholder: 'Your Monday.com API token' %>
+                              placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Monday.com API token' %>
+          <em class="info">
+            <% if @config.persisted? %>Leave blank to keep existing token. <% end %>
+            Generate from Monday.com API settings
+          </em>
         </p>
       </div>
     </div>
