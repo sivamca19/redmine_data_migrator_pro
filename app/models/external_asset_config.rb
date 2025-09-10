@@ -4,6 +4,9 @@ class ExternalAssetConfig < ActiveRecord::Base
   SUPPORTED_SYSTEMS = %w[jira clickup asana trello monday].freeze
   STATUSES = %w[active inactive].freeze
 
+  # Virtual attributes for form handling
+  attr_accessor :email, :api_token, :api_key, :team_id, :additional_config
+
   belongs_to :project, optional: true
   has_many :data_migrations
 
@@ -165,6 +168,4 @@ class ExternalAssetConfig < ActiveRecord::Base
     end
   end
 
-  # Virtual attributes for form handling
-  attr_accessor :email, :api_token, :api_key, :team_id, :additional_config
 end
