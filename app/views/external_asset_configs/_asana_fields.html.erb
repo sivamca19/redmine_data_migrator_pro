@@ -1,0 +1,9 @@
+<p>
+  <%= f.label :api_token, 'Personal Access Token *' %>
+  <%= f.password_field :api_token, size: 50,
+                      placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Asana personal access token' %>
+  <em class="info">
+    <% if @config.persisted? %>Leave blank to keep existing token. <% end %>
+    Generate from Asana Developer Console
+  </em>
+</p>

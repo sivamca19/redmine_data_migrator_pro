@@ -1,0 +1,13 @@
+<p>
+  <%= f.label :api_key, 'API Key *' %>
+  <%= f.text_field :api_key, size: 50,
+                   placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Trello API key',
+                   value: @config.persisted? ? (@config.api_key || '[Configured]') : '' %>
+</p>
+
+<p>
+  <%= f.label :api_token, 'API Token *' %>
+  <%= f.password_field :api_token, size: 50,
+                      placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Trello API token' %>
+  <% if @config.persisted? %><em class="info">Leave blank to keep existing token</em><% end %>
+</p>

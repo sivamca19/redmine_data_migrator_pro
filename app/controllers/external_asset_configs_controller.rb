@@ -74,6 +74,18 @@ class ExternalAssetConfigsController < ApplicationController
     end
   end
 
+  def system_fields
+    @config = params[:config_id].present? ? ExternalAssetConfig.find(params[:config_id]) : ExternalAssetConfig.new
+    @config.system_type = params[:system_type]
+    @config.load_credentials_to_attributes if @config.persisted?
+
+    respond_to do |format|
+      format.html do
+        render partial: 'system_fields_content', locals: { system_type: params[:system_type], config: @config }
+      end
+    end
+  end
+
   private
 
   def find_config

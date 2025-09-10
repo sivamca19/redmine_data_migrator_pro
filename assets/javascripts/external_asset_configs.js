@@ -5,7 +5,7 @@ $(document).ready(function() {
   // System type selector change handler
   $('.system-type-selector').on('change', function() {
     var selectedSystem = $(this).val();
-    showCredentialFields(selectedSystem);
+    loadCredentialFields(selectedSystem);
   });
 
   // Advanced settings toggle
@@ -54,22 +54,43 @@ $(document).ready(function() {
   initializeForm();
 });
 
-function showCredentialFields(systemType) {
-  // Hide all credential field groups
-  $('.credential-fields').hide();
+function loadCredentialFields(systemType) {
+  var $container = $('.system-specific-fields');
+  var configId = $container.data('config-id');
+  var isPersisted = $container.data('persisted');
 
-  // Show the selected system's fields
-  if (systemType) {
-    $('.' + systemType + '-fields').show();
+  if (!systemType) {
+    $container.html('');
+    return;
   }
 
-  // Update required field indicators
-  updateRequiredFields(systemType);
+  // Show loading indicator
+  $container.html('<p class="loading">Loading credential fields...</p>');
+
+  // Make AJAX request to load the fields
+  $.ajax({
+    url: '/external_asset_configs/system_fields',
+    type: 'GET',
+    data: {
+      system_type: systemType,
+      config_id: configId,
+      persisted: isPersisted
+    },
+    success: function(html) {
+      $container.html(html);
+      // Update required field indicators after loading new fields
+      updateRequiredFields(systemType);
+    },
+    error: function(xhr, status, error) {
+      $container.html('<p class="error">Failed to load credential fields. Please try again.</p>');
+      console.error('Failed to load credential fields:', error);
+    }
+  });
 }
 
 function updateRequiredFields(systemType) {
   // Remove all required attributes first
-  $('.credential-fields input').removeAttr('required');
+  $('.system-specific-fields input').removeAttr('required');
 
   // Check if this is a new configuration
   var isNewConfig = $('.box.tabular').data('config-mode') === 'new';
@@ -82,21 +103,21 @@ function updateRequiredFields(systemType) {
   // Add required attributes based on system type for new configs only
   switch(systemType) {
     case 'jira':
-      $('.jira-fields input[name$="[email]"]').attr('required', 'required');
-      $('.jira-fields input[name$="[api_token]"]').attr('required', 'required');
+      $('.system-specific-fields input[name$="[email]"]').attr('required', 'required');
+      $('.system-specific-fields input[name$="[api_token]"]').attr('required', 'required');
       break;
     case 'clickup':
-      $('.clickup-fields input[name$="[api_key]"]').attr('required', 'required');
+      $('.system-specific-fields input[name$="[api_key]"]').attr('required', 'required');
       break;
     case 'asana':
-      $('.asana-fields input[name$="[api_token]"]').attr('required', 'required');
+      $('.system-specific-fields input[name$="[api_token]"]').attr('required', 'required');
       break;
     case 'trello':
-      $('.trello-fields input[name$="[api_key]"]').attr('required', 'required');
-      $('.trello-fields input[name$="[api_token]"]').attr('required', 'required');
+      $('.system-specific-fields input[name$="[api_key]"]').attr('required', 'required');
+      $('.system-specific-fields input[name$="[api_token]"]').attr('required', 'required');
       break;
     case 'monday':
-      $('.monday-fields input[name$="[api_key]"]').attr('required', 'required');
+      $('.system-specific-fields input[name$="[api_key]"]').attr('required', 'required');
       break;
   }
 }
@@ -142,10 +163,10 @@ function showConnectionResult(type, message) {
 }
 
 function initializeForm() {
-  // Show appropriate credential fields based on initial system type
+  // Load appropriate credential fields based on initial system type
   var initialSystemType = $('.system-type-selector').val();
   if (initialSystemType) {
-    showCredentialFields(initialSystemType);
+    loadCredentialFields(initialSystemType);
   }
 
   // Set up form validation

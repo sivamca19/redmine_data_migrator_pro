@@ -24,4 +24,7 @@ resources :external_asset_configs do
   member do
     get :test_connection
   end
+  collection do
+    get :system_fields
+  end
 end

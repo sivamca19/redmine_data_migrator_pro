@@ -1,0 +1,9 @@
+<p>
+  <%= f.label :api_key, 'API Token *' %>
+  <%= f.password_field :api_key, size: 50,
+                      placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your Monday.com API token' %>
+  <em class="info">
+    <% if @config.persisted? %>Leave blank to keep existing token. <% end %>
+    Generate from Monday.com API settings
+  </em>
+</p>
