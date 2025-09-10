@@ -168,8 +168,7 @@ class DataMigratorController < ApplicationController
   def history
     @migrations = DataMigration.includes(:user, :project)
                               .order(created_at: :desc)
-                              .page(params[:page])
-                              .per(25)
+                              .limit(50)
   end
 
   def download_report
