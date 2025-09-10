@@ -100,21 +100,27 @@ class ExternalAssetConfig < ActiveRecord::Base
 
     begin
       decrypted = decrypt_sensitive_data(encrypted_credentials)
+      return false unless decrypted.is_a?(Hash)
+      
       case system_type
       when 'jira'
-        decrypted['email'].present? && decrypted['api_token'].present?
+        email_present = decrypted['email'].to_s.strip.present?
+        token_present = decrypted['api_token'].to_s.strip.present?
+        email_present && token_present
       when 'clickup'
-        decrypted['api_key'].present?
+        decrypted['api_key'].to_s.strip.present?
       when 'asana'
-        decrypted['api_token'].present?
+        decrypted['api_token'].to_s.strip.present?
       when 'trello'
-        decrypted['api_key'].present? && decrypted['api_token'].present?
+        api_key_present = decrypted['api_key'].to_s.strip.present?
+        token_present = decrypted['api_token'].to_s.strip.present?
+        api_key_present && token_present
       when 'monday'
-        decrypted['api_key'].present?
+        decrypted['api_key'].to_s.strip.present?
       else
         true
       end
-    rescue => e
+    rescue StandardError => e
       Rails.logger.error "Failed to check stored credentials for asset config #{id}: #{e.message}"
       false
     end
