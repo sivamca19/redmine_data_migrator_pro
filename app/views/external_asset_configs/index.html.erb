@@ -61,7 +61,7 @@
             <% end %>
           </td>
           <td class="created-date">
-            <%= time_tag(config.created_at, format: :short) %>
+            <%= time_tag(config.created_at) %>
           </td>
           <td class="buttons">
             <%= link_to 'View', external_asset_config_path(config),
