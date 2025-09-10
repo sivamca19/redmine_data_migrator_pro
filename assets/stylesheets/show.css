@@ -1,0 +1,17 @@
+.help-text {
+  color: #6c757d;
+  font-style: italic;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.btn-primary {
+  background-color: #169bd7;
+  border-color: #169bd7;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #1487c1;
+  border-color: #1487c1;
+}

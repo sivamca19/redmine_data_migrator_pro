@@ -1,0 +1,59 @@
+.field-mapping-table {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.field-mapping-table th,
+.field-mapping-table td {
+  padding: 8px;
+  vertical-align: top;
+  border: 1px solid #ddd;
+}
+
+.field-mapping-table thead th {
+  background-color: #f8f9fa;
+  font-weight: bold;
+}
+
+.field-sample .empty-sample {
+  color: #999;
+  font-style: italic;
+}
+
+.auto-suggestion {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.mapping-help {
+  cursor: pointer;
+}
+
+.target-field select {
+  width: 100%;
+}
+
+.standard-field-indicator,
+.custom-field-indicator {
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  margin-left: 5px;
+}
+
+.standard-field-indicator {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.custom-field-indicator {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.help-text {
+  color: #6c757d;
+  font-style: italic;
+}

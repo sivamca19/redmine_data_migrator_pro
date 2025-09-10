@@ -1,5 +1,6 @@
 <% content_for :header_tags do %>
   <%= stylesheet_link_tag 'data_migrator', :plugin => 'redmine_data_migrator_pro' %>
+  <%= stylesheet_link_tag 'show', :plugin => 'redmine_data_migrator_pro' %>
   <%= javascript_include_tag 'data_migrator', :plugin => 'redmine_data_migrator_pro' %>
 <% end %>
 
@@ -244,23 +245,3 @@
 <%= @migration.processing_log %>
   </div>
 <% end %>
-
-<style>
-.help-text {
-  color: #6c757d;
-  font-style: italic;
-  font-size: 12px;
-  margin-top: 5px;
-}
-
-.btn-primary {
-  background-color: #169bd7;
-  border-color: #169bd7;
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: #1487c1;
-  border-color: #1487c1;
-}
-</style>
