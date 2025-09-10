@@ -1,34 +1,19 @@
+# frozen_string_literal: true
+
+# Helper for External Asset Configurations
 module ExternalAssetConfigsHelper
-  def external_asset_config_breadcrumbs(config = nil, action = nil)
-    breadcrumbs = []
-    breadcrumbs << link_to(l(:label_administration), administration_path)
-    breadcrumbs << link_to('External Asset Configurations', external_asset_configs_path)
-    
-    case action || action_name
-    when 'show'
-      breadcrumbs << config.name if config
-    when 'new'
-      breadcrumbs << 'New Configuration'
-    when 'edit'
-      if config
-        breadcrumbs << link_to(config.name, external_asset_config_path(config))
-        breadcrumbs << 'Edit'
-      end
-    end
-    
-    breadcrumbs
-  end
-  
+  include AdminBreadcrumbsHelper
+
   def render_breadcrumbs(config = nil, action = nil)
-    breadcrumbs = external_asset_config_breadcrumbs(config, action)
-    content_tag :div, class: 'contextual-breadcrumbs' do
-      breadcrumbs.map.with_index do |crumb, index|
-        if index == breadcrumbs.length - 1
-          content_tag :span, crumb, class: 'current'
-        else
-          crumb + content_tag(:span, ' » ', class: 'separator')
-        end
-      end.join.html_safe
-    end
+    render_admin_breadcrumbs(
+      show_admin: true,
+      section_name: 'External Asset Configurations',
+      section_path: external_asset_configs_path,
+      action: action,
+      item_name: config&.name,
+      item_path: config ? external_asset_config_path(config) : nil,
+      new_label: 'New Configuration',
+      edit_label: 'Edit'
+    )
   end
 end

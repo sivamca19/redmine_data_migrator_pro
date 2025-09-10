@@ -16,6 +16,8 @@
 # 4. Queue for cron processing -> CronMigrationService
 # 5. Process data -> DataMigrationProcessor
 class DataMigratorController < ApplicationController
+  layout 'admin'
+
   before_action :require_admin
   before_action :find_migration, except: [:index, :upload, :history, :clear_history]
 

@@ -1,5 +1,6 @@
 // External Asset Configurations JavaScript
 $(document).ready(function() {
+  console.log('External Asset Configs JS loaded');
   initializeEventHandlers();
   initializeForm();
 });
@@ -13,8 +14,10 @@ function initializeEventHandlers() {
   // Advanced settings toggle
   $('.toggle-advanced').on('click', toggleAdvancedSettings);
 
-  // Test connection handler
+  // Test connection handler - simple direct binding
   $(document).on('click', '.test-connection-btn', handleTestConnection);
+
+  console.log('Event handlers initialized, test buttons found:', $('.test-connection-btn').length);
 }
 
 function toggleAdvancedSettings(e) {
@@ -36,6 +39,8 @@ function handleTestConnection(e) {
   var $btn = $(this);
   var originalText = $btn.text();
 
+  console.log('Test connection clicked', $btn.attr('href'));
+
   // Disable button and show loading
   $btn.prop('disabled', true).text('Testing...');
   clearPreviousResults();
@@ -45,9 +50,11 @@ function handleTestConnection(e) {
     type: 'GET',
     dataType: 'json',
     success: function(response) {
+      console.log('Connection test response:', response);
       handleTestConnectionResponse(response, $btn, originalText);
     },
-    error: function(xhr) {
+    error: function(xhr, status, error) {
+      console.error('Connection test error:', xhr.status, xhr.responseText);
       handleTestConnectionError(xhr, $btn, originalText);
     }
   });
@@ -171,12 +178,20 @@ function handleTestConnectionError(xhr, $btn, originalText) {
 }
 
 function showConnectionResult(type, message) {
+  console.log('showConnectionResult called:', type, message);
   var $result = $('#connection-test-result');
+
+  if ($result.length === 0) {
+    console.error('connection-test-result element not found');
+    return;
+  }
 
   $result.removeClass('notice error warning')
          .addClass(type === 'success' ? 'notice' : 'error')
          .text(message)
          .show();
+
+  console.log('Result shown, element classes:', $result.attr('class'));
 
   // Auto-hide after 5 seconds
   setTimeout(function() {
