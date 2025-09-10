@@ -30,6 +30,22 @@
           { required: true, id: 'data_migration_source_type' } %>
     </p>
 
+    <div class="external-config-selector" style="display: none;">
+      <p>
+        <%= f.label :external_asset_config_id, "Asset Configuration" %>
+        <%= f.select :external_asset_config_id,
+            options_for_select(@external_configs.map { |config| [config.display_name, config.id] }, @migration.external_asset_config_id),
+            { prompt: 'Select asset configuration (optional)' },
+            { id: 'data_migration_external_asset_config_id' } %>
+        <em class="info">
+          Select a configuration to access attachments from the external system.
+          <% if User.current.admin? %>
+            <%= link_to 'Manage Configurations', external_asset_configs_path, target: '_blank' %>
+          <% end %>
+        </em>
+      </p>
+    </div>
+
     <p>
       <%= f.label :file, "Data File" %>
       <div class="file-upload-area">

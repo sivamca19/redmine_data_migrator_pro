@@ -4,6 +4,7 @@ class DataMigration < ActiveRecord::Base
 
   belongs_to :user
   belongs_to :project, optional: true
+  belongs_to :external_asset_config, optional: true
 
   validates :source_type, presence: true, inclusion: { in: SUPPORTED_SOURCE_TYPES }
   validates :filename, presence: true

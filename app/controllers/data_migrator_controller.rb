@@ -20,10 +20,11 @@ class DataMigratorController < ApplicationController
   before_action :find_migration, except: [:index, :upload, :history, :clear_history]
 
   def index
-    @migrations = DataMigration.includes(:user, :project)
+    @migrations = DataMigration.includes(:user, :project, :external_asset_config)
                               .recent
                               .limit(20)
     @migration = DataMigration.new
+    @external_configs = ExternalAssetConfig.active.order(:name)
   end
 
   def upload
@@ -36,9 +37,12 @@ class DataMigratorController < ApplicationController
       @migration = result[:migration]
       redirect_to data_migrator_path(@migration)
     else
-      @migrations = DataMigration.recent.limit(20)
+      @migrations = DataMigration.includes(:user, :project, :external_asset_config)
+                                .recent
+                                .limit(20)
       @migration = DataMigration.new(migration_data)
       @migration.errors.add(:file, result[:errors].first)
+      @external_configs = ExternalAssetConfig.active.order(:name)
       render :index
     end
   end
@@ -226,7 +230,7 @@ class DataMigratorController < ApplicationController
   end
 
   def migration_params
-    params.require(:data_migration).permit(:source_type, :description, :file)
+    params.require(:data_migration).permit(:source_type, :description, :file, :external_asset_config_id)
   end
 
   def processing_options_params

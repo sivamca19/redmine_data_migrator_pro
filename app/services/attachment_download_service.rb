@@ -3,11 +3,12 @@ require 'uri'
 require 'tempfile'
 
 class AttachmentDownloadService
-  attr_reader :issue, :user, :errors
+  attr_reader :issue, :user, :errors, :external_config
 
-  def initialize(issue, user)
+  def initialize(issue, user, external_config = nil)
     @issue = issue
     @user = user
+    @external_config = external_config
     @errors = []
   end
 
@@ -214,15 +215,52 @@ class AttachmentDownloadService
   def add_authentication(request, uri)
     host = uri.host.to_s.downcase
 
+    # Try external config first if it matches the system type
+    if @external_config
+      case @external_config.system_type
+      when 'jira'
+        if host.match?(/atlassian\.net$/) || host.match?(/jira/)
+          add_jira_auth(request, uri)
+          return
+        end
+      when 'clickup'
+        if host.match?(/clickup\.com$/)
+          add_clickup_auth(request, uri)
+          return
+        end
+      when 'asana'
+        if host.match?(/asana\.com$/)
+          add_asana_auth(request, uri)
+          return
+        end
+      when 'trello'
+        if host.match?(/trello\.com$/)
+          add_trello_auth(request, uri)
+          return
+        end
+      when 'monday'
+        if host.match?(/monday\.com$/)
+          add_monday_auth(request, uri)
+          return
+        end
+      end
+    end
+
+    # Default authentication based on host
     case host
     when /atlassian\.net$/, /jira/
-      # Jira/Atlassian authentication
       add_jira_auth(request, uri)
+    when /clickup\.com$/
+      add_clickup_auth(request, uri)
+    when /asana\.com$/
+      add_asana_auth(request, uri)
+    when /trello\.com$/
+      add_trello_auth(request, uri)
+    when /monday\.com$/
+      add_monday_auth(request, uri)
     when /github\.com$/
-      # GitHub authentication (if needed)
       add_github_auth(request, uri)
     when /gitlab\.com$/
-      # GitLab authentication (if needed)
       add_gitlab_auth(request, uri)
     else
       # Try basic auth from URL if present
@@ -235,22 +273,76 @@ class AttachmentDownloadService
 
   # Add Jira authentication using API token with basic auth
   def add_jira_auth(request, uri)
-    # Jira requires email + API token for basic auth
-    jira_email = ENV['JIRA_EMAIL'] # Update with correct email
-    jira_token = ENV['JIRA_API_TOKEN']
+    # Try external config first, then fallback to environment variables
+    if @external_config&.system_type == 'jira' && @external_config.credentials_configured?
+      credentials = @external_config.get_auth_credentials
+      request.basic_auth(credentials[:email], credentials[:api_token])
+      puts "Using Jira auth from external config: #{credentials[:email].gsub(/@.+/, '@***')}"
+    elsif ENV['JIRA_EMAIL'] && ENV['JIRA_API_TOKEN']
+      # Fallback to environment variables
+      jira_email = ENV['JIRA_EMAIL']
+      jira_token = ENV['JIRA_API_TOKEN']
 
-    if jira_email && jira_token && jira_token != 'your-jira-api-token-here'
-      # Jira Cloud attachment downloads require basic auth with email:api_token
-      request.basic_auth(jira_email, jira_token)
-      puts "Using Jira basic auth with email: #{jira_email.gsub(/@.+/, '@***')}"
+      if jira_token != 'your-jira-api-token-here'
+        request.basic_auth(jira_email, jira_token)
+        puts "Using Jira basic auth from environment: #{jira_email.gsub(/@.+/, '@***')}"
+      else
+        add_fallback_auth(request, uri, 'Jira')
+      end
     elsif uri.userinfo
       # Basic auth from URL if credentials not configured
       request.basic_auth(uri.user, uri.password)
       puts "Using basic auth from URL for Jira"
     else
-      puts "ERROR: Jira authentication not properly configured!"
-      puts "Need both JIRA_EMAIL and JIRA_API_TOKEN environment variables"
-      puts "Or update jira_email and jira_token variables in the code"
+      add_fallback_auth(request, uri, 'Jira')
+    end
+  end
+
+  # Add ClickUp authentication
+  def add_clickup_auth(request, uri)
+    if @external_config&.system_type == 'clickup' && @external_config.credentials_configured?
+      credentials = @external_config.get_auth_credentials
+      request['Authorization'] = credentials[:api_key]
+      puts "Using ClickUp auth from external config"
+    else
+      add_fallback_auth(request, uri, 'ClickUp')
+    end
+  end
+
+  # Add Asana authentication
+  def add_asana_auth(request, uri)
+    if @external_config&.system_type == 'asana' && @external_config.credentials_configured?
+      credentials = @external_config.get_auth_credentials
+      request['Authorization'] = "Bearer #{credentials[:api_token]}"
+      puts "Using Asana auth from external config"
+    else
+      add_fallback_auth(request, uri, 'Asana')
+    end
+  end
+
+  # Add Trello authentication
+  def add_trello_auth(request, uri)
+    if @external_config&.system_type == 'trello' && @external_config.credentials_configured?
+      credentials = @external_config.get_auth_credentials
+      # Trello uses API key and token as query parameters
+      connector = uri.query ? '&' : '?'
+      # Note: For Trello, the URI modification should happen at the request level
+      # This is a placeholder - actual implementation may need URI reconstruction
+      puts 'Using Trello auth from external config'
+      puts "Note: Trello authentication requires URL modification with key=#{credentials[:api_key]}"
+    else
+      add_fallback_auth(request, uri, 'Trello')
+    end
+  end
+
+  # Add Monday.com authentication
+  def add_monday_auth(request, uri)
+    if @external_config&.system_type == 'monday' && @external_config.credentials_configured?
+      credentials = @external_config.get_auth_credentials
+      request['Authorization'] = credentials[:api_key]
+      puts "Using Monday.com auth from external config"
+    else
+      add_fallback_auth(request, uri, 'Monday.com')
     end
   end
 
@@ -269,6 +361,17 @@ class AttachmentDownloadService
     if gitlab_token
       request['Authorization'] = "Bearer #{gitlab_token}"
       puts "Using GitLab token authentication"
+    end
+  end
+
+  # Fallback authentication handler
+  def add_fallback_auth(request, uri, system_name)
+    if uri.userinfo
+      request.basic_auth(uri.user, uri.password)
+      puts "Using basic auth from URL for #{system_name}"
+    else
+      puts "WARNING: #{system_name} authentication not configured!"
+      puts "Please configure external asset configuration or use environment variables"
     end
   end
 

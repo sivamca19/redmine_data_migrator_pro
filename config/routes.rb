@@ -19,3 +19,9 @@ resources :data_migrator do
     delete :destroy
   end
 end
+
+resources :external_asset_configs do
+  member do
+    get :test_connection
+  end
+end
