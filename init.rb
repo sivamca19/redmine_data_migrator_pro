@@ -8,6 +8,13 @@ Redmine::Plugin.register :redmine_data_migrator_pro do
 
   requires_redmine :version_or_higher => '4.0.0'
 
+  settings default: {
+    'job_processor' => 'cron',
+    'chunk_size' => 100,
+    'max_file_size_mb' => 50,
+    'cleanup_days' => 30
+  }, partial: 'settings/redmine_data_migrator_pro_settings'
+
   menu :admin_menu, :data_migrator, { :controller => 'data_migrator', :action => 'index' },
        :caption => %Q{
     <svg xmlns="http://www.w3.org/2000/svg" class='s18 icon-svg' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">

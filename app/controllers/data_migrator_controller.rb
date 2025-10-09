@@ -120,10 +120,7 @@ class DataMigratorController < ApplicationController
       end
 
       if params[:start_processing] == '1'
-        @migration.update!(
-          status: 'processing',
-          processing_log: (@migration.processing_log || "") + "\nProcessing queued for cron at #{Time.current}"
-        )
+        BackgroundJobService.queue_migration(@migration.id)
       end
 
       redirect_to data_migrator_path(@migration)
@@ -156,10 +153,7 @@ class DataMigratorController < ApplicationController
         @migration.update!(project: project) if @migration.project != project
       end
 
-      @migration.update!(
-        status: 'processing',
-        processing_log: "Migration queued for cron processing at #{Time.current}"
-      )
+      BackgroundJobService.queue_migration(@migration.id)
 
       redirect_to data_migrator_path(@migration)
     else

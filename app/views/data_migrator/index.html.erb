@@ -16,6 +16,23 @@
 
 <p class="nodata">Import data from various project management tools (Jira, ClickUp, Asana, Trello, etc.) into Redmine.</p>
 
+<% begin %>
+  <% processor_status = BackgroundJobService.processor_status %>
+  <div class="flash notice" style="margin-bottom: 15px;">
+    <strong>Job Processor:</strong> <%= processor_status[:processor] %> - <%= processor_status[:details] %>
+    <% if processor_status[:pending_migrations] && processor_status[:pending_migrations] > 0 %>
+      | <strong><%= processor_status[:pending_migrations] %></strong> pending migrations
+    <% end %>
+    <% if User.current.admin? %>
+      | <%= link_to "Configure", plugin_settings_path(:id => 'redmine_data_migrator_pro'), :class => 'icon icon-settings' %>
+    <% end %>
+  </div>
+<% rescue => e %>
+  <div class="flash error" style="margin-bottom: 15px;">
+    <strong>Job Processor Status:</strong> Unable to load status (<%= e.message %>)
+  </div>
+<% end %>
+
 <div class="box tabular">
   <%= form_with model: @migration, url: upload_data_migrator_index_path, local: true, multipart: true, html: { id: 'migration-form' } do |f| %>
     <p>

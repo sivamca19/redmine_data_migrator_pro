@@ -1,0 +1,226 @@
+<%= stylesheet_link_tag 'external_asset_configs', plugin: 'redmine_data_migrator_pro' %>
+
+<div class="plugin-settings">
+  <h3>Background Job Processing</h3>
+  
+  <table class="settings-table">
+    <tbody>
+      <tr>
+        <td style="width: 200px;">
+          <label for="settings_job_processor">Job Processor:</label>
+        </td>
+        <td>
+          <%= select_tag 'settings[job_processor]',
+                         options_for_select([
+                           ['Cron Jobs', 'cron'],
+                           ['Delayed Job', 'delayed_job'],
+                           ['Sidekiq', 'sidekiq'], 
+                           ['Active Job', 'active_job']
+                         ], @settings['job_processor']),
+                         id: 'settings_job_processor',
+                         class: 'job-processor-select' %>
+          <em class="info">Choose how background jobs are processed</em>
+          
+          <div id="processor-status" style="margin-top: 8px;">
+            <div class="processor-info cron" style="<%= 'display: none;' unless @settings['job_processor'] == 'cron' %>">
+              <span class="badge status-active">Ready</span> 
+              Jobs are processed via cron scheduler. Make sure to set up the cron job.
+            </div>
+            
+            <div class="processor-info delayed_job" style="<%= 'display: none;' unless @settings['job_processor'] == 'delayed_job' %>">
+              <% if defined?(Delayed::Job) %>
+                <span class="badge status-active">Available</span>
+                Delayed Job is installed and ready to use.
+              <% else %>
+                <span class="badge status-inactive">Not Available</span>
+                Delayed Job gem is not installed. Add <code>gem 'delayed_job_active_record'</code> to Gemfile.
+              <% end %>
+            </div>
+            
+            <div class="processor-info sidekiq" style="<%= 'display: none;' unless @settings['job_processor'] == 'sidekiq' %>">
+              <% if defined?(Sidekiq) %>
+                <span class="badge status-active">Available</span>
+                Sidekiq is installed and ready to use.
+              <% else %>
+                <span class="badge status-inactive">Not Available</span>
+                Sidekiq gem is not installed. Add <code>gem 'sidekiq'</code> to Gemfile.
+              <% end %>
+            </div>
+            
+            <div class="processor-info active_job" style="<%= 'display: none;' unless @settings['job_processor'] == 'active_job' %>">
+              <% if defined?(ActiveJob) %>
+                <span class="badge status-active">Available</span>
+                Active Job is available (Rails <%= Rails.version %>).
+              <% else %>
+                <span class="badge status-inactive">Not Available</span>
+                Active Job requires Rails 4.2 or higher.
+              <% end %>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Processing Options</h3>
+  
+  <table class="settings-table">
+    <tbody>
+      <tr>
+        <td style="width: 200px;">
+          <label for="settings_chunk_size">Default Chunk Size:</label>
+        </td>
+        <td>
+          <%= number_field_tag 'settings[chunk_size]',
+                               @settings['chunk_size'],
+                               id: 'settings_chunk_size',
+                               min: 10,
+                               max: 1000,
+                               style: 'width: 100px;' %>
+          <em class="info">Number of records processed per batch (10-1000)</em>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>
+          <label for="settings_max_file_size_mb">Max File Size (MB):</label>
+        </td>
+        <td>
+          <%= number_field_tag 'settings[max_file_size_mb]',
+                               @settings['max_file_size_mb'],
+                               id: 'settings_max_file_size_mb',
+                               min: 1,
+                               max: 500,
+                               style: 'width: 100px;' %>
+          <em class="info">Maximum file size allowed for uploads (1-500 MB)</em>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>
+          <label for="settings_cleanup_days">Cleanup After (Days):</label>
+        </td>
+        <td>
+          <%= number_field_tag 'settings[cleanup_days]',
+                               @settings['cleanup_days'],
+                               id: 'settings_cleanup_days',
+                               min: 1,
+                               max: 365,
+                               style: 'width: 100px;' %>
+          <em class="info">Delete completed/failed migrations after this many days (1-365)</em>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Setup Instructions</h3>
+  
+  <div id="setup-instructions">
+    <div class="setup-info cron" style="<%= 'display: none;' unless @settings['job_processor'] == 'cron' %>">
+      <h4>Cron Job Setup</h4>
+      <p>Add the following line to your crontab to process migrations every 5 minutes:</p>
+      <pre><code>*/5 * * * * cd <%= Rails.root %> && RAILS_ENV=<%= Rails.env %> bundle exec rake data_migration:process_pending</code></pre>
+      
+      <p>For cleanup of old migrations (daily at 2 AM):</p>
+      <pre><code>0 2 * * * cd <%= Rails.root %> && RAILS_ENV=<%= Rails.env %> bundle exec rake data_migration:cleanup_old</code></pre>
+    </div>
+    
+    <div class="setup-info delayed_job" style="<%= 'display: none;' unless @settings['job_processor'] == 'delayed_job' %>">
+      <h4>Delayed Job Setup</h4>
+      <p>1. Add to Gemfile: <code>gem 'delayed_job_active_record'</code></p>
+      <p>2. Run: <code>rails generate delayed_job:active_record && rake db:migrate</code></p>
+      <p>3. Start workers: <code>RAILS_ENV=<%= Rails.env %> bundle exec rake jobs:work</code></p>
+    </div>
+    
+    <div class="setup-info sidekiq" style="<%= 'display: none;' unless @settings['job_processor'] == 'sidekiq' %>">
+      <h4>Sidekiq Setup</h4>
+      <p>1. Add to Gemfile: <code>gem 'sidekiq'</code></p>
+      <p>2. Ensure Redis is installed and running</p>
+      <p>3. Start Sidekiq: <code>RAILS_ENV=<%= Rails.env %> bundle exec sidekiq</code></p>
+    </div>
+    
+    <div class="setup-info active_job" style="<%= 'display: none;' unless @settings['job_processor'] == 'active_job' %>">
+      <h4>Active Job Setup</h4>
+      <p>Active Job is built into Rails. Configure your queue adapter in:</p>
+      <pre><code># config/application.rb
+config.active_job.queue_adapter = :delayed_job  # or :sidekiq, :resque, etc.</code></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+$(document).ready(function() {
+  $('.job-processor-select').on('change', function() {
+    var selectedProcessor = $(this).val();
+    
+    // Hide all processor info divs
+    $('.processor-info').hide();
+    $('.setup-info').hide();
+    
+    // Show selected processor info and setup
+    $('.processor-info.' + selectedProcessor).show();
+    $('.setup-info.' + selectedProcessor).show();
+  });
+});
+</script>
+
+<style>
+.plugin-settings {
+  max-width: 800px;
+}
+
+.settings-table {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.settings-table td {
+  padding: 8px;
+  vertical-align: top;
+}
+
+.settings-table td:first-child {
+  font-weight: bold;
+  text-align: right;
+  padding-right: 15px;
+}
+
+.badge {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status-active {
+  background-color: #5cb85c;
+  color: white;
+}
+
+.status-inactive {
+  background-color: #d9534f;
+  color: white;
+}
+
+.processor-info, .setup-info {
+  padding: 8px;
+  border-left: 3px solid #ddd;
+  margin: 5px 0;
+}
+
+pre {
+  background-color: #f5f5f5;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  overflow-x: auto;
+}
+
+code {
+  background-color: #f5f5f5;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+</style>

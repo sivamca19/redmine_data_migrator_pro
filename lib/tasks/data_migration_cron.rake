@@ -23,10 +23,23 @@ namespace :data_migration do
     end
   end
 
+  desc 'Queue cleanup job using configured job processor'
+  task queue_cleanup: :environment do
+    begin
+      Rails.logger.info 'Queuing cleanup job via configured processor'
+      BackgroundJobService.queue_cleanup
+      puts "Cleanup job queued successfully using #{BackgroundJobService.current_processor} processor"
+    rescue => e
+      Rails.logger.error "Failed to queue cleanup job: #{e.message}"
+      puts "Error: #{e.message}"
+      exit 1
+    end
+  end
+
   desc 'Process a specific migration by ID'
   task :process_single, [:migration_id] => :environment do |t, args|
     migration_id = args[:migration_id]
-    
+
     if migration_id.blank?
       puts 'Please provide a migration ID: rake data_migration:process_single[123]'
       exit 1
@@ -35,9 +48,9 @@ namespace :data_migration do
     begin
       migration = DataMigration.find(migration_id)
       puts "Processing migration #{migration_id}..."
-      
+
       success = CronMigrationService.process_single_migration(migration)
-      
+
       if success
         puts "Migration #{migration_id} completed successfully"
       else
@@ -56,11 +69,11 @@ namespace :data_migration do
   desc 'Show status of all recent migrations'
   task status: :environment do
     migrations = DataMigration.order(created_at: :desc).limit(10)
-    
+
     puts "\nRecent Data Migrations:"
     puts "ID".ljust(5) + "Status".ljust(12) + "Source".ljust(10) + "File".ljust(30) + "Created"
     puts "-" * 80
-    
+
     migrations.each do |migration|
       puts migration.id.to_s.ljust(5) +
            migration.status.ljust(12) +
@@ -68,8 +81,44 @@ namespace :data_migration do
            (migration.filename || 'N/A')[0, 29].ljust(30) +
            migration.created_at.strftime('%Y-%m-%d %H:%M')
     end
-    
+
     puts "\nPending migrations: #{DataMigration.where(status: 'processing').count}"
     puts "Failed migrations: #{DataMigration.where(status: 'failed').count}"
+  end
+
+  desc 'Show job processor status and configuration'
+  task processor_status: :environment do
+    puts "\n" + "="*60
+    puts "DATA MIGRATOR PRO - JOB PROCESSOR STATUS"
+    puts "="*60
+
+    begin
+      # Current processor info
+      status = BackgroundJobService.processor_status
+      puts "\nCurrent Processor: #{status[:processor]}"
+      puts "Status: #{status[:status]}"
+      puts "Details: #{status[:details]}"
+
+      if status[:pending_migrations]
+        puts "Pending migrations: #{status[:pending_migrations]}"
+      end
+
+      # Available processors
+      puts "\nAvailable Processors:"
+      BackgroundJobService.available_processors.each do |processor|
+        status_icon = processor[:available] ? "✓" : "✗"
+        puts "  #{status_icon} #{processor[:name]} (#{processor[:key]}) - #{processor[:description]}"
+      end
+
+      # Configuration validation
+      validation = BackgroundJobService.validate_processor_configuration
+      puts "\nConfiguration: #{validation[:valid] ? '✓ Valid' : "✗ #{validation[:error]}"}"
+
+    rescue => e
+      puts "Error getting processor status: #{e.message}"
+      exit 1
+    end
+
+    puts "\n" + "="*60
   end
 end
