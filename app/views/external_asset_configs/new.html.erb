@@ -1,0 +1,12 @@
+<%= render_breadcrumbs(nil, 'new') %>
+
+<h2>New External Asset Configuration</h2>
+
+<%= form_with model: @config, local: true, html: { class: 'tabular' } do |f| %>
+  <%= render 'form', f: f %>
+
+  <p>
+    <%= f.submit 'Create Configuration', class: 'button-positive' %>
+    <%= link_to 'Cancel', external_asset_configs_path, class: 'button' %>
+  </p>
+<% end %>

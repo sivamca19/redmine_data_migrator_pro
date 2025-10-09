@@ -1,0 +1,93 @@
+<%= content_for :header_tags do %>
+  <%= stylesheet_link_tag 'external_asset_configs', plugin: 'redmine_data_migrator_pro' %>
+  <%= javascript_include_tag 'external_asset_configs', plugin: 'redmine_data_migrator_pro' %>
+<% end %>
+
+<%= render_breadcrumbs %>
+
+<h2>External Asset Configurations</h2>
+
+<div class="contextual">
+  <%= link_to 'New Configuration', new_external_asset_config_path,
+              class: 'icon icon-add',
+              title: 'Create new external asset configuration' %>
+</div>
+
+<% if @configs.any? %>
+  <table class="list">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>System Type</th>
+        <th>Base URL</th>
+        <th>Status</th>
+        <th>Connection</th>
+        <th>Created</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @configs.each do |config| %>
+        <tr class="<%= cycle('odd', 'even') %> <%= 'inactive-config' if config.inactive? %>">
+          <td class="name">
+            <%= link_to config.name, external_asset_config_path(config),
+                        class: 'config-name' %>
+          </td>
+          <td class="system-type">
+            <span class="badge <%= config.system_type %>-badge">
+              <%= config.system_type_humanized %>
+            </span>
+          </td>
+          <td class="base-url">
+            <%= truncate(config.base_url, length: 40) %>
+          </td>
+          <td class="status">
+            <span class="badge status-<%= config.status %>">
+              <%= config.status.humanize %>
+            </span>
+          </td>
+          <td class="connection-test">
+            <% if config.credentials_configured? %>
+              <%= link_to 'Test', test_connection_external_asset_config_path(config),
+                          class: 'test-connection-btn',
+                          data: { config_id: config.id },
+                          title: 'Test connection to external system' %>
+            <% else %>
+              <span class="missing-credentials" title="Credentials not configured">
+                Not configured
+              </span>
+            <% end %>
+          </td>
+          <td class="created-date">
+            <%= time_tag(config.created_at) %>
+          </td>
+          <td class="buttons">
+            <%= link_to 'View', external_asset_config_path(config),
+                        class: 'icon icon-zoom-in',
+                        title: 'View configuration details' %>
+            <%= link_to 'Edit', edit_external_asset_config_path(config),
+                        class: 'icon icon-edit',
+                        title: 'Edit configuration' %>
+            <% unless config.data_migrations.any? %>
+              <%= link_to 'Delete', external_asset_config_path(config),
+                          method: :delete,
+                          data: { confirm: "Are you sure you want to delete '#{config.name}'?" },
+                          class: 'icon icon-del',
+                          title: 'Delete configuration' %>
+            <% else %>
+              <span class="icon icon-locked"
+                    title="Cannot delete - used by <%= config.data_migrations.count %> migration(s)"></span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <div id="connection-test-result" class="flash notice" style="display:none;"></div>
+<% else %>
+  <p class="nodata">
+    No external asset configurations have been created yet.
+    <%= link_to 'Create the first one', new_external_asset_config_path, class: 'icon icon-add' %>.
+  </p>
+<% end %>

@@ -1,0 +1,31 @@
+<%= form_with model: config, url: '', local: true, html: { style: 'display: none;' } do |form| %>
+  <div class="ajax-loaded-fields">
+    <%= render "#{system_type}_fields", f: form if system_type.present? %>
+  </div>
+<% end %>
+
+<script>
+  // Extract the fields from the hidden form and move them to the visible form
+  $(document).ready(function() {
+    var $ajaxFields = $('.ajax-loaded-fields');
+    var $targetContainer = $('.system-specific-fields');
+    
+    // Move the fields to the main form
+    $targetContainer.html($ajaxFields.html());
+    
+    // Update form field names to match the main form
+    $targetContainer.find('input, select, textarea').each(function() {
+      var $field = $(this);
+      var name = $field.attr('name');
+      if (name) {
+        // Replace the temporary form prefix with the correct one
+        var newName = name.replace(/external_asset_config\[/, 'external_asset_config[');
+        $field.attr('name', newName);
+        $field.attr('id', $field.attr('id').replace(/external_asset_config_/, 'external_asset_config_'));
+      }
+    });
+    
+    // Remove the temporary form
+    $('.ajax-loaded-fields').closest('form').remove();
+  });
+</script>

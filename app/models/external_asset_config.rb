@@ -1,0 +1,230 @@
+# External Asset Configuration model for accessing JIRA, ClickUp, and other PM tool assets
+# Stores encrypted credentials for secure access to external attachment/file systems
+class ExternalAssetConfig < ActiveRecord::Base
+  # Constants
+  SUPPORTED_SYSTEMS = %w[jira clickup asana trello monday].freeze
+  STATUSES = %w[active inactive].freeze
+
+  # Virtual attributes for form handling
+  attr_accessor :email, :api_token, :api_key, :team_id, :additional_config
+
+  # Associations
+  has_many :data_migrations, dependent: :restrict_with_error
+
+  # Validations
+  validates :name, presence: true, uniqueness: true, length: { maximum: 255 }
+  validates :system_type, presence: true, inclusion: { in: SUPPORTED_SYSTEMS }
+  validates :status, presence: true, inclusion: { in: STATUSES }
+  validates :base_url, presence: true,
+                       format: { with: URI::DEFAULT_PARSER.make_regexp(%w[http https]) },
+                       length: { maximum: 500 }
+  validates :description, length: { maximum: 1000 }
+
+  # Scopes
+  scope :active, -> { where(status: 'active') }
+  scope :by_system_type, ->(type) { where(system_type: type) }
+
+  # Callbacks
+  before_save :encrypt_credentials
+  after_find :decrypt_credentials
+
+  def system_type_humanized
+    system_type.humanize
+  end
+
+  def active?
+    status == 'active'
+  end
+
+  def inactive?
+    status == 'inactive'
+  end
+
+  # Get configuration for specific system
+  def self.for_migration(system_type)
+    configurations = active.by_system_type(system_type)
+    configurations.first
+  end
+
+  # Test connection to external system
+  def test_connection
+    case system_type
+    when 'jira'
+      test_jira_connection
+    when 'clickup'
+      test_clickup_connection
+    else
+      { success: false, message: "Connection test not implemented for #{system_type}" }
+    end
+  end
+
+  def credentials_configured?
+    return stored_credentials_valid? if persisted?
+
+    virtual_credentials_valid?
+  end
+
+  # Get credentials for AttachmentDownloadService
+  def auth_credentials
+    {
+      email: email,
+      api_token: api_token,
+      api_key: api_key,
+      base_url: base_url,
+      system_type: system_type
+    }
+  end
+
+  # Public method to load credentials into virtual attributes
+  def load_credentials_to_attributes
+    decrypt_credentials if encrypted_credentials.present?
+  end
+
+  private
+
+  def stored_credentials_valid?
+    encrypted_credentials.present? && has_required_credentials_in_storage?
+  end
+
+  def virtual_credentials_valid?
+    case system_type
+    when 'jira'
+      email.present? && api_token.present?
+    when 'clickup'
+      api_key.present?
+    when 'asana'
+      api_token.present?
+    when 'trello'
+      api_key.present? && api_token.present?
+    when 'monday'
+      api_key.present?
+    else
+      true
+    end
+  end
+
+  def has_required_credentials_in_storage?
+    return false unless encrypted_credentials.present?
+
+    begin
+      decrypted = decrypt_sensitive_data(encrypted_credentials)
+      return false unless decrypted.is_a?(Hash)
+
+      case system_type
+      when 'jira'
+        email_present = decrypted['email'].to_s.strip.present?
+        token_present = decrypted['api_token'].to_s.strip.present?
+        email_present && token_present
+      when 'clickup'
+        decrypted['api_key'].to_s.strip.present?
+      when 'asana'
+        decrypted['api_token'].to_s.strip.present?
+      when 'trello'
+        api_key_present = decrypted['api_key'].to_s.strip.present?
+        token_present = decrypted['api_token'].to_s.strip.present?
+        api_key_present && token_present
+      when 'monday'
+        decrypted['api_key'].to_s.strip.present?
+      else
+        true
+      end
+    rescue StandardError => e
+      Rails.logger.error "Failed to check stored credentials for asset config #{id}: #{e.message}"
+      false
+    end
+  end
+
+  def encrypt_credentials
+    existing_data = {}
+    if encrypted_credentials.present?
+      begin
+        existing_data = decrypt_sensitive_data(encrypted_credentials)
+      rescue StandardError => e
+        Rails.logger.error "Failed to decrypt existing credentials during save: #{e.message}"
+      end
+    end
+
+    new_data = existing_data.dup
+    %w[email api_token api_key team_id additional_config].each do |field|
+      value = send(field)
+      if value.present?
+        new_data[field] = value
+      elsif value == '' && !existing_data.key?(field)
+        new_data[field] = value
+      end
+    end
+
+    self.encrypted_credentials = encrypt_sensitive_data(new_data)
+  end
+
+  def decrypt_credentials
+    return unless encrypted_credentials.present?
+
+    begin
+      decrypted = decrypt_sensitive_data(encrypted_credentials)
+      self.email = decrypted['email']
+      self.api_token = decrypted['api_token']
+      self.api_key = decrypted['api_key']
+      self.team_id = decrypted['team_id']
+      self.additional_config = decrypted['additional_config']
+    rescue => e
+      Rails.logger.error "Failed to decrypt credentials for asset config #{id}: #{e.message}"
+    end
+  end
+
+  def encrypt_sensitive_data(data)
+    # Simple Base64 encoding - in production, use Rails.application.secret_key_base
+    Base64.strict_encode64(data.to_json)
+  end
+
+  def decrypt_sensitive_data(encrypted_data)
+    # Simple Base64 decoding - in production, use proper decryption
+    JSON.parse(Base64.strict_decode64(encrypted_data))
+  end
+
+  def test_jira_connection
+    return { success: false, message: 'Email and API token required' } unless credentials_configured?
+
+    make_http_request(
+      "#{base_url}/rest/api/2/myself",
+      auth: :basic,
+      success_message: ->(data) { "Connected successfully as #{data['displayName']}" }
+    )
+  end
+
+  def test_clickup_connection
+    return { success: false, message: 'API key required' } unless credentials_configured?
+
+    make_http_request(
+      "#{base_url}/api/v2/user",
+      auth: :bearer,
+      success_message: ->(data) { "Connected successfully as #{data['user']['username']}" }
+    )
+  end
+
+  def make_http_request(url, auth:, success_message:)
+    uri = URI(url)
+    request = Net::HTTP::Get.new(uri)
+
+    case auth
+    when :basic
+      request.basic_auth(email, api_token)
+    when :bearer
+      request['Authorization'] = api_key
+    end
+
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == 'https') do |http|
+      http.request(request)
+    end
+
+    if response.code == '200'
+      user_data = JSON.parse(response.body)
+      { success: true, message: success_message.call(user_data) }
+    else
+      { success: false, message: "HTTP #{response.code}: #{response.message}" }
+    end
+  rescue StandardError => e
+    { success: false, message: "Connection failed: #{e.message}" }
+  end
+
+end

@@ -2,6 +2,15 @@
 
 $(document).ready(function() {
 
+  // External asset config change handler
+  $('#data_migration_external_asset_config_id').on('change', function() {
+    var configId = $(this).val();
+    if (configId) {
+      // Config selected - form is ready
+      console.log('Asset configuration selected:', configId);
+    }
+  });
+
   // File upload drag and drop
   var fileUploadArea = $('.file-upload-area');
   var fileInput = $('#data_migration_file');
@@ -121,7 +130,7 @@ $(document).ready(function() {
   // Form validation
   $('#migration-form').on('submit', function(e) {
     var fileInput = $('#data_migration_file');
-    var sourceType = $('#data_migration_source_type');
+    var assetConfig = $('#data_migration_external_asset_config_id');
 
     if (!fileInput.val()) {
       alert('Please select a file to upload.');
@@ -129,8 +138,8 @@ $(document).ready(function() {
       return false;
     }
 
-    if (!sourceType.val()) {
-      alert('Please select a source system.');
+    if (!assetConfig.val()) {
+      alert('Please select an asset configuration.');
       e.preventDefault();
       return false;
     }

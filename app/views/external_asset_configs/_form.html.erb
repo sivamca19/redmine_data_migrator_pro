@@ -1,0 +1,105 @@
+<%= content_for :header_tags do %>
+  <%= stylesheet_link_tag 'external_asset_configs', plugin: 'redmine_data_migrator_pro' %>
+  <%= javascript_include_tag 'external_asset_configs', plugin: 'redmine_data_migrator_pro' %>
+<% end %>
+
+<%= error_messages_for @config %>
+
+<div class="box tabular" data-config-mode="<%= @config.persisted? ? 'edit' : 'new' %>">
+  <fieldset>
+    <legend>Basic Information</legend>
+
+    <p>
+      <%= f.label :name, 'Configuration Name *', class: 'required' %>
+      <%= f.text_field :name, required: true, size: 40,
+                       placeholder: 'e.g., Main JIRA Instance' %>
+      <em class="info">Unique name to identify this configuration</em>
+    </p>
+
+    <p>
+      <%= f.label :system_type, 'System Type *', class: 'required' %>
+      <%= f.select :system_type,
+                   options_for_select(
+                     ExternalAssetConfig::SUPPORTED_SYSTEMS.map { |sys| [sys.humanize, sys] },
+                     @config.system_type
+                   ),
+                   { prompt: 'Select system type...' },
+                   { required: true, class: 'system-type-selector' } %>
+    </p>
+
+    <p>
+      <%= f.label :base_url, 'Base URL *', class: 'required' %>
+      <%= f.text_field :base_url, required: true, size: 60,
+                       placeholder: 'https://your-instance.atlassian.net' %>
+      <em class="info">Full URL including protocol (https://)</em>
+    </p>
+
+    <p>
+      <%= f.label :status, 'Status' %>
+      <%= f.select :status,
+                   options_for_select(
+                     ExternalAssetConfig::STATUSES.map { |status| [status.humanize, status] },
+                     @config.status
+                   ),
+                   {},
+                   { class: 'status-selector' } %>
+    </p>
+
+    <p>
+      <%= f.label :description, 'Description' %>
+      <%= f.text_area :description, rows: 3, cols: 60,
+                      placeholder: 'Optional description of this configuration...' %>
+    </p>
+  </fieldset>
+
+  <fieldset class="credentials-section">
+    <legend>Authentication Credentials</legend>
+    <div class="credentials-info">
+      <p class="info-text">
+        Configure authentication credentials for accessing the external system.
+        These credentials are encrypted and stored securely.
+      </p>
+    </div>
+
+    <div class="system-specific-fields" data-config-id="<%= @config.id %>" data-persisted="<%= @config.persisted? %>">
+      <!-- Dynamic fields will be loaded here via AJAX -->
+      <% if @config.system_type.present? %>
+        <%= render "#{@config.system_type}_fields", f: f %>
+      <% end %>
+    </div>
+
+    <% if @config.persisted? && @config.credentials_configured? %>
+      <div class="test-connection-section">
+        <p>
+          <%= link_to 'Test Connection',
+                      test_connection_external_asset_config_path(@config),
+                      class: 'button test-connection-btn',
+                      data: { config_id: @config.id } %>
+          <span class="test-connection-result"></span>
+        </p>
+      </div>
+    <% end %>
+  </fieldset>
+
+  <fieldset class="advanced-section" style="display: none;">
+    <legend>Advanced Settings</legend>
+
+    <p>
+      <%= f.label :team_id, 'Team/Organization ID' %>
+      <%= f.text_field :team_id, size: 30,
+                       placeholder: 'Optional team or organization ID' %>
+      <em class="info">Required for some multi-tenant systems</em>
+    </p>
+
+    <p>
+      <%= f.label :additional_config, 'Additional Configuration' %>
+      <%= f.text_area :additional_config, rows: 4, cols: 60,
+                      placeholder: 'JSON format additional configuration options' %>
+      <em class="info">Advanced configuration in JSON format</em>
+    </p>
+  </fieldset>
+
+  <p>
+    <a href="#" class="toggle-advanced">Show Advanced Settings</a>
+  </p>
+</div>

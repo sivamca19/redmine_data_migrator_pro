@@ -7,27 +7,46 @@
 
 <div class="contextual">
   <%= link_to "History", history_data_migrator_index_path, :class => 'icon icon-history' %>
+  <% if User.current.admin? %>
+    <%= link_to "Asset Configurations", external_asset_configs_path, :class => 'icon icon-settings' %>
+  <% end %>
 </div>
 
 <h2>Data Migrator</h2>
 
 <p class="nodata">Import data from various project management tools (Jira, ClickUp, Asana, Trello, etc.) into Redmine.</p>
 
+<% begin %>
+  <% processor_status = BackgroundJobService.processor_status %>
+  <div class="flash notice" style="margin-bottom: 15px;">
+    <strong>Job Processor:</strong> <%= processor_status[:processor] %> - <%= processor_status[:details] %>
+    <% if processor_status[:pending_migrations] && processor_status[:pending_migrations] > 0 %>
+      | <strong><%= processor_status[:pending_migrations] %></strong> pending migrations
+    <% end %>
+    <% if User.current.admin? %>
+      | <%= link_to "Configure", plugin_settings_path(:id => 'redmine_data_migrator_pro'), :class => 'icon icon-settings' %>
+    <% end %>
+  </div>
+<% rescue => e %>
+  <div class="flash error" style="margin-bottom: 15px;">
+    <strong>Job Processor Status:</strong> Unable to load status (<%= e.message %>)
+  </div>
+<% end %>
+
 <div class="box tabular">
   <%= form_with model: @migration, url: upload_data_migrator_index_path, local: true, multipart: true, html: { id: 'migration-form' } do |f| %>
     <p>
-      <%= f.label :source_type, "Source System" %>
-      <%= f.select :source_type,
-          options_for_select([
-            ['Jira', 'jira'],
-            ['ClickUp', 'clickup'],
-            ['Asana', 'asana'],
-            ['Trello', 'trello'],
-            ['Monday.com', 'monday'],
-            ['Custom/Other', 'custom']
-          ], @migration.source_type),
-          { prompt: 'Select source system' },
-          { required: true, id: 'data_migration_source_type' } %>
+      <%= f.label :external_asset_config_id, "Asset Configuration" %>
+      <%= f.select :external_asset_config_id,
+          options_for_select(@external_configs.map { |config| [config.name, config.id] }, @migration.external_asset_config_id),
+          { prompt: 'Select asset configuration' },
+          { required: true, id: 'data_migration_external_asset_config_id' } %>
+      <em class="info">
+        Select a configuration for your data source system and attachment access.
+        <% if User.current.admin? %>
+          <%= link_to 'Manage Configurations', external_asset_configs_path, target: '_blank' %>
+        <% end %>
+      </em>
     </p>
 
     <p>
@@ -62,6 +81,7 @@
         <th>File</th>
         <th>Source</th>
         <th>Project</th>
+        <th>Config</th>
         <th>Status</th>
         <th>Rows</th>
         <th>Progress</th>
@@ -91,6 +111,15 @@
           </td>
           <td class="project">
             <%= migration.project ? link_to(migration.project.name, project_path(migration.project)) : '-' %>
+          </td>
+          <td class="config">
+            <% if migration.external_asset_config %>
+              <span title="<%= migration.external_asset_config.name %>">
+                <%= truncate(migration.external_asset_config.name, length: 12) %>
+              </span>
+            <% else %>
+              <span class="inactive">-</span>
+            <% end %>
           </td>
           <td class="status">
             <span class="status-<%= migration.status %>">

@@ -1,11 +1,16 @@
 class DataMigration < ActiveRecord::Base
+  SUPPORTED_SOURCE_TYPES = %w[jira clickup asana trello monday custom].freeze
+  SUPPORTED_FILE_EXTENSIONS = %w[.csv .xls .xlsx].freeze
+
   belongs_to :user
   belongs_to :project, optional: true
+  belongs_to :external_asset_config, optional: true
 
-  validates :source_type, presence: true, inclusion: { in: %w[jira clickup asana trello monday custom] }
+  validates :source_type, presence: true, inclusion: { in: SUPPORTED_SOURCE_TYPES }
   validates :filename, presence: true
   validates :user, presence: true
   validates :file_path, presence: true
+  validate :supported_file_format
 
   enum status: {
     uploaded: 0,
@@ -16,6 +21,8 @@ class DataMigration < ActiveRecord::Base
   }
 
   scope :recent, -> { order(created_at: :desc) }
+  scope :active, -> { where.not(status: 'cancelled') }
+  scope :by_source_type, ->(type) { where(source_type: type) if type.present? }
 
   def can_process?
     uploaded? && File.exist?(file_path.to_s)
@@ -31,7 +38,7 @@ class DataMigration < ActiveRecord::Base
   end
 
   def supported_format?
-    %w[.csv .xls .xlsx].include?(file_extension)
+    SUPPORTED_FILE_EXTENSIONS.include?(file_extension)
   end
 
   def file_size_mb
@@ -62,7 +69,7 @@ class DataMigration < ActiveRecord::Base
   end
 
   def can_edit_mapping?
-    true || (uploaded? || failed? || completed?) && file_exists?
+    (uploaded? || failed? || completed?) && file_exists?
   end
 
   def can_rollback?
@@ -87,26 +94,73 @@ class DataMigration < ActiveRecord::Base
     end
   end
 
-  # Get parsed analysis data
   def get_analysis
-    return { headers: [], sample_data: [], standard_fields: {}, custom_fields: [], field_suggestions: {} } if analysis_data.blank?
+    return default_analysis_structure if analysis_data.blank?
 
     begin
       parsed = JSON.parse(analysis_data).with_indifferent_access
-      # Ensure required keys exist
-      parsed[:headers] ||= []
-      parsed[:sample_data] ||= []
-      parsed[:standard_fields] ||= {}
-      parsed[:custom_fields] ||= []
-      parsed[:field_suggestions] ||= {}
-      parsed
+      ensure_analysis_structure(parsed)
     rescue JSON::ParserError
-      { headers: [], sample_data: [], standard_fields: {}, custom_fields: [], field_suggestions: {} }
+      Rails.logger.error "Failed to parse analysis data for migration #{id}"
+      default_analysis_structure
     end
   end
 
-  # Store analysis data
   def store_analysis(analysis_hash)
     update!(analysis_data: analysis_hash.to_json)
+  end
+
+  def has_field_mapping?
+    field_mapping.present?
+  end
+
+  def parsed_field_mapping
+    return {} unless has_field_mapping?
+    JSON.parse(field_mapping)
+  rescue JSON::ParserError
+    Rails.logger.error "Failed to parse field mapping for migration #{id}"
+    {}
+  end
+
+  def parsed_processing_options
+    return {} unless processing_options.present?
+    JSON.parse(processing_options)
+  rescue JSON::ParserError
+    Rails.logger.error "Failed to parse processing options for migration #{id}"
+    {}
+  end
+
+  def add_to_processing_log(message)
+    current_log = processing_log || ""
+    update!(processing_log: "#{current_log}\n#{Time.current}: #{message}")
+  end
+
+  private
+
+  def supported_file_format
+    return unless filename.present?
+
+    unless supported_format?
+      errors.add(:filename, "must be one of: #{SUPPORTED_FILE_EXTENSIONS.join(', ')}")
+    end
+  end
+
+  def default_analysis_structure
+    {
+      headers: [],
+      sample_data: [],
+      standard_fields: {},
+      custom_fields: [],
+      field_suggestions: {}
+    }
+  end
+
+  def ensure_analysis_structure(parsed)
+    parsed[:headers] ||= []
+    parsed[:sample_data] ||= []
+    parsed[:standard_fields] ||= {}
+    parsed[:custom_fields] ||= []
+    parsed[:field_suggestions] ||= {}
+    parsed
   end
 end

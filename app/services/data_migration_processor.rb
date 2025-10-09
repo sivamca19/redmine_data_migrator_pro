@@ -273,7 +273,7 @@ class DataMigrationProcessor
     @imported_issue_ids << issue.id
 
     # Handle attachments after issue creation
-    attachment_service = AttachmentDownloadService.new(issue, migration.user)
+    attachment_service = AttachmentDownloadService.new(issue, migration.user, migration.external_asset_config)
     attachment_service.process_attachments_from_row(row_data, @field_mapping, row_number)
 
     puts "Successfully created issue #{issue.id} from row #{row_number}"

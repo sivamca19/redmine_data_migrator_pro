@@ -1,0 +1,138 @@
+<%= content_for :header_tags do %>
+  <%= stylesheet_link_tag 'external_asset_configs', plugin: 'redmine_data_migrator_pro' %>
+  <%= javascript_include_tag 'external_asset_configs', plugin: 'redmine_data_migrator_pro' %>
+<% end %>
+
+<%= render_breadcrumbs(@config, 'show') %>
+
+<div class="contextual">
+  <%= link_to 'Edit', edit_external_asset_config_path(@config),
+              class: 'icon icon-edit' %>
+  <% unless @config.data_migrations.any? %>
+    <%= link_to 'Delete', external_asset_config_path(@config),
+                method: :delete,
+                data: { confirm: "Are you sure you want to delete '#{@config.name}'?" },
+                class: 'icon icon-del' %>
+  <% end %>
+</div>
+
+<h2><%= @config.name %></h2>
+
+<div class="box">
+  <h3>Configuration Details</h3>
+
+  <div class="attributes">
+    <div class="attribute">
+      <div class="label">Name:</div>
+      <div class="value"><%= @config.name %></div>
+    </div>
+
+    <div class="attribute">
+      <div class="label">System Type:</div>
+      <div class="value">
+        <span class="badge <%= @config.system_type %>-badge">
+          <%= @config.system_type_humanized %>
+        </span>
+      </div>
+    </div>
+
+    <div class="attribute">
+      <div class="label">Base URL:</div>
+      <div class="value">
+        <a href="<%= @config.base_url %>" target="_blank" class="external">
+          <%= @config.base_url %>
+        </a>
+      </div>
+    </div>
+
+    <div class="attribute">
+      <div class="label">Status:</div>
+      <div class="value">
+        <span class="badge status-<%= @config.status %>">
+          <%= @config.status.humanize %>
+        </span>
+      </div>
+    </div>
+
+    <% if @config.description.present? %>
+      <div class="attribute">
+        <div class="label">Description:</div>
+        <div class="value"><%= simple_format(@config.description) %></div>
+      </div>
+    <% end %>
+
+    <div class="attribute">
+      <div class="label">Credentials Status:</div>
+      <div class="value">
+        <% if @config.credentials_configured? %>
+          <span class="icon icon-ok">Configured</span>
+          <%= link_to 'Test Connection',
+                      test_connection_external_asset_config_path(@config),
+                      class: 'button-small test-connection-btn',
+                      data: { config_id: @config.id } %>
+        <% else %>
+          <span class="icon icon-warning">Not configured</span>
+          <%= link_to 'Configure Credentials',
+                      edit_external_asset_config_path(@config),
+                      class: 'button-small' %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="attribute">
+      <div class="label">Created:</div>
+      <div class="value">
+        <%= time_tag(@config.created_at) %> by
+        <em>System Administrator</em>
+      </div>
+    </div>
+
+    <% if @config.updated_at != @config.created_at %>
+      <div class="attribute">
+        <div class="label">Last Updated:</div>
+        <div class="value"><%= time_tag(@config.updated_at) %></div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="box">
+  <h3>Usage Statistics</h3>
+
+  <div class="attributes">
+    <div class="attribute">
+      <div class="label">Data Migrations:</div>
+      <div class="value">
+        <% if @config.data_migrations.any? %>
+          <strong><%= @config.data_migrations.count %></strong> migration(s) use this configuration
+          <ul class="migration-list">
+            <% @config.data_migrations.recent.limit(5).each do |migration| %>
+              <li>
+                <%= link_to "Migration ##{migration.id}", data_migrator_path(migration) %>
+                (<%= migration.filename %>) - <%= time_tag(migration.created_at) %>
+              </li>
+            <% end %>
+            <% if @config.data_migrations.count > 5 %>
+              <li><em>... and <%= @config.data_migrations.count - 5 %> more</em></li>
+            <% end %>
+          </ul>
+        <% else %>
+          <em>No migrations have used this configuration yet</em>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% unless @config.active? %>
+  <div class="flash warning">
+    <strong>Inactive Configuration:</strong> This configuration is marked as inactive and
+    will not be available for selection during file uploads.
+  </div>
+<% end %>
+
+<div id="connection-test-result" class="flash notice" style="display:none;"></div>
+
+<div class="contextual-links">
+  <%= link_to 'Back to Configurations', external_asset_configs_path, class: 'icon icon-index' %>
+</div>

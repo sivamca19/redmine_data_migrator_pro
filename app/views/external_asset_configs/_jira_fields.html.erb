@@ -1,0 +1,22 @@
+<p>
+  <%= f.label :email, 'Email Address *' %>
+  <%= f.email_field :email, size: 40,
+                    placeholder: 'your-email@domain.com',
+                    value: @config.persisted? ? (@config.email || '[Configured]') : '' %>
+  <em class="info">JIRA user email address</em>
+</p>
+
+<p>
+  <%= f.label :api_token, 'API Token *' %>
+  <%= f.password_field :api_token, size: 40,
+                      placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'Your JIRA API token' %>
+  <em class="info">
+    <% if @config.persisted? %>
+      Leave blank to keep existing token, or enter new token to replace.
+    <% end %>
+    Generate from
+    <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank">
+      Atlassian Account Settings
+    </a>
+  </em>
+</p>

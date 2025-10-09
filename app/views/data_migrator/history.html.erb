@@ -7,6 +7,9 @@
 
 <div class="contextual">
   <%= link_to "New Migration", data_migrator_index_path, :class => 'icon icon-add' %>
+  <% if User.current.admin? %>
+    <%= link_to "Asset Configurations", external_asset_configs_path, :class => 'icon icon-settings' %>
+  <% end %>
 </div>
 
 <h2>Migration History</h2>
@@ -19,6 +22,7 @@
         <th>File</th>
         <th>Source</th>
         <th>Project</th>
+        <th>Asset Config</th>
         <th>Status</th>
         <th>Rows</th>
         <th>Success Rate</th>
@@ -49,6 +53,15 @@
           </td>
           <td class="project">
             <%= migration.project ? link_to(migration.project.name, project_path(migration.project)) : '-' %>
+          </td>
+          <td class="asset-config">
+            <% if migration.external_asset_config %>
+              <%= link_to truncate(migration.external_asset_config.name, length: 15),
+                          external_asset_config_path(migration.external_asset_config),
+                          title: migration.external_asset_config.name %>
+            <% else %>
+              <span class="inactive">None</span>
+            <% end %>
           </td>
           <td class="status">
             <span class="status-<%= migration.status %>">
@@ -134,16 +147,9 @@
     </tbody>
   </table>
 
-  <% if respond_to?(:paginate) %>
-    <%= paginate @migrations %>
-  <% else %>
-    <p class="pagination">
-      <%= link_to_if @migrations.respond_to?(:prev_page) && @migrations.prev_page,
-          "« Previous", params.merge(page: @migrations.prev_page) %>
-      <%= link_to_if @migrations.respond_to?(:next_page) && @migrations.next_page,
-          "Next »", params.merge(page: @migrations.next_page) %>
-    </p>
-  <% end %>
+  <p class="info">
+    <em>Showing the latest 50 migrations.</em>
+  </p>
 
 <% else %>
   <p class="nodata">No migrations found. <%= link_to "Start your first migration", data_migrator_index_path %>.</p>
@@ -153,7 +159,7 @@
 <div class="box">
   <h3>Statistics</h3>
   <%
-    total_migrations = @migrations.respond_to?(:total_count) ? @migrations.total_count : DataMigration.count
+    total_migrations = DataMigration.count
     completed_count = DataMigration.completed.count
     failed_count = DataMigration.failed.count
     processing_count = DataMigration.processing.count

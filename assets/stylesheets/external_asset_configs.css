@@ -1,0 +1,269 @@
+/* External Asset Configurations Styles */
+
+/* Breadcrumb styles */
+.contextual-breadcrumbs {
+  margin-bottom: 15px;
+  padding: 8px 0;
+  border-bottom: 1px solid #ddd;
+  font-size: 12px;
+}
+
+.contextual-breadcrumbs a {
+  color: #337AB7;
+  text-decoration: none;
+}
+
+.contextual-breadcrumbs a:hover {
+  text-decoration: underline;
+}
+
+.contextual-breadcrumbs .separator {
+  color: #999;
+  margin: 0 5px;
+}
+
+.contextual-breadcrumbs .current {
+  color: #666;
+  font-weight: bold;
+}
+
+/* Index page styles */
+.external-asset-configs-index table.list td.system-type,
+.external-asset-configs-index table.list td.status,
+.external-asset-configs-index table.list td.connection-test {
+  text-align: center;
+}
+
+.external-asset-configs-index .inactive-config {
+  opacity: 0.6;
+}
+
+.external-asset-configs-index .config-name {
+  font-weight: bold;
+}
+
+/* System type badges */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: white;
+}
+
+.jira-badge { background-color: #0052CC; }
+.clickup-badge { background-color: #7B68EE; }
+.asana-badge { background-color: #F06A6A; }
+.trello-badge { background-color: #0079BF; }
+.monday-badge { background-color: #FF3D57; }
+.custom-badge { background-color: #666; }
+
+/* Status badges */
+.status-active { background-color: #5CB85C; }
+.status-inactive { background-color: #D9534F; }
+
+/* Connection test button */
+.test-connection-btn {
+  font-size: 11px;
+  padding: 2px 6px;
+  background-color: #337AB7;
+  color: white !important;
+  text-decoration: none;
+  border-radius: 2px;
+}
+
+.test-connection-btn:hover {
+  background-color: #286090;
+}
+
+/* Test connection animations */
+.test-connection-btn.test-success {
+  background-color: #5CB85C !important;
+  transform: scale(1.05);
+  transition: all 0.3s ease;
+}
+
+.test-connection-btn.test-error {
+  background-color: #D9534F !important;
+  animation: shake 0.5s ease-in-out;
+  transition: all 0.3s ease;
+}
+
+@keyframes shake {
+  0%, 20%, 40%, 60%, 80% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-2px);
+  }
+  15%, 35%, 55%, 75%, 95% {
+    transform: translateX(2px);
+  }
+}
+
+.missing-credentials {
+  color: #D9534F;
+  font-size: 11px;
+  font-style: italic;
+}
+
+/* Form styles */
+.tabular .credentials-section {
+  border: 1px solid #ddd;
+  padding: 15px;
+  margin: 15px 0;
+  background-color: #f9f9f9;
+}
+
+.tabular .credentials-section legend {
+  font-weight: bold;
+  color: #333;
+  padding: 0 10px;
+  background-color: white;
+}
+
+.credentials-info {
+  margin-bottom: 15px;
+  padding: 8px 12px;
+  background-color: #e7f3ff;
+  border-left: 4px solid #337AB7;
+  border-radius: 2px;
+}
+
+.credentials-info .info-text {
+  margin: 0;
+  color: #31708f;
+  font-size: 13px;
+}
+
+.system-specific-fields {
+  margin-top: 15px;
+}
+
+.credential-fields {
+  padding: 10px;
+  margin: 5px 0;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 3px;
+}
+
+.system-type-selector {
+  min-width: 200px;
+}
+
+/* Show/hide fields based on system type */
+.credential-fields[style*="display: none"] {
+  display: none !important;
+}
+
+/* Test connection result */
+#connection-test-result {
+  margin-top: 10px;
+}
+
+.test-connection-result {
+  margin-left: 10px;
+  font-weight: bold;
+}
+
+.test-connection-result.success {
+  color: #5CB85C;
+}
+
+.test-connection-result.error {
+  color: #D9534F;
+}
+
+/* Advanced settings toggle */
+.advanced-section {
+  border: 1px solid #ddd;
+  padding: 15px;
+  margin: 15px 0;
+  background-color: #fafafa;
+}
+
+.toggle-advanced {
+  font-size: 12px;
+  text-decoration: none;
+  color: #337AB7;
+}
+
+.toggle-advanced:hover {
+  text-decoration: underline;
+}
+
+/* Show page styles */
+.attributes {
+  margin: 10px 0;
+}
+
+.attributes .attribute {
+  display: flex;
+  margin-bottom: 8px;
+  padding: 5px 0;
+  border-bottom: 1px dotted #ddd;
+}
+
+.attributes .attribute:last-child {
+  border-bottom: none;
+}
+
+.attributes .label {
+  font-weight: bold;
+  width: 150px;
+  flex-shrink: 0;
+  color: #333;
+}
+
+.attributes .value {
+  flex: 1;
+  color: #666;
+}
+
+.attributes .value a.external:after {
+  content: " ↗";
+  color: #999;
+}
+
+/* Migration list in show page */
+.migration-list {
+  margin: 5px 0 0 20px;
+  font-size: 12px;
+}
+
+.migration-list li {
+  margin-bottom: 3px;
+}
+
+/* Contextual links */
+.contextual-links {
+  margin-top: 20px;
+  text-align: center;
+  padding-top: 10px;
+  border-top: 1px solid #ddd;
+}
+
+/* Icons for locked configurations */
+.icon-locked {
+  opacity: 0.5;
+  cursor: help;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .attributes .attribute {
+    flex-direction: column;
+  }
+
+  .attributes .label {
+    width: auto;
+    margin-bottom: 3px;
+  }
+
+  table.list td.buttons {
+    white-space: nowrap;
+  }
+}

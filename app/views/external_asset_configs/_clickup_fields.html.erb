@@ -1,0 +1,9 @@
+<p>
+  <%= f.label :api_key, 'API Key *' %>
+  <%= f.password_field :api_key, size: 50,
+                      placeholder: @config.persisted? ? 'Leave blank to keep existing' : 'pk_your_api_key_here' %>
+  <em class="info">
+    <% if @config.persisted? %>Leave blank to keep existing key. <% end %>
+    Generate from ClickUp Settings > Apps > API
+  </em>
+</p>
